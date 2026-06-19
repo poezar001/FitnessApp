@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">FitnessApp</string>
+    <string name="welcome_title">Welcome to\nFitTrack</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="no_account">Don\'t have an account?</string>
+    <string name="have_account">Already have an account?</string>
+    <string name="get_started">Get Started</string>
+    <string name="continue_text">Continue</string>
+
+    <!-- Labels and Actions with Emojis -->
+    <string name="label_calories">\uD83D\uDD25 Calories</string>
+    <string name="label_steps">\uD83D\uDC63 Steps</string>
+    <string name="label_time">\u23F1\uFE0F Time</string>
+    <string name="action_start_run">\uD83C\uDFC3 Start Run</string>
+    <string name="action_set_goal">\uD83C\uDFAF Set Goal</string>
+    <string name="action_add_workout">+ Add Workout</string>
+
+    <!-- Categories -->
+    <string name="cat_running">\uD83C\uDFC3 Running</string>
+    <string name="cat_cycling">\uD83D\uDEB2 Cycling</string>
+    <string name="cat_weightlifting">\uD83D\uDCAA Weightlifting</string>
+    <string name="cat_walking">\uD83D\uDEB6 Walking</string>
+    <string name="cat_yoga">\uD83E\uDDD8 Yoga</string>
+    <string name="cat_all">All</string>
+
+    <!-- Achievement and Icons -->
+    <string name="icon_trophy">\uD83C\uDFC6</string>
+    <string name="icon_run">\uD83C\uDFC3</string>
+    <string name="icon_workout">\uD83D\uDCAA</string>
+    <string name="icon_check">\u2713</string>
+    <string name="icon_female">\uD83D\uDC69</string>
+    <string name="icon_male">\uD83D\uDC68</string>
+    <string name="icon_star">\uD83C\uDF1F</string>
+    <string name="icon_bolt">\u26A1</string>
+    <string name="icon_fire">\uD83D\uDD25</string>
+
+    <!-- Levels -->
+    <string name="level_beginner">\uD83C\uDF1F Beginner</string>
+    <string name="level_intermediate">\u26A1 Intermediate</string>
+    <string name="level_advanced">\uD83D\uDD25 Advanced</string>
+
+    <!-- Titles and UI Text -->
+    <string name="title_recent_workouts">Recent Workouts</string>
+    <string name="title_total_workouts">Total Workouts</string>
+    <string name="title_total_calories">Total Calories</string>
+    <string name="title_total_hours">Total Hours</string>
+    <string name="label_today">Today</string>
+    <string name="label_weekly">Weekly</string>
+    <string name="label_monthly">Monthly</string>
+
+    <string name="member_since">Member since: %s</string>
+</resources>

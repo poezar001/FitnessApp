@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors - Lime Green -->
+    <color name="primary">#00C853</color>
+    <color name="primary_dark">#009624</color>
+    <color name="primary_light">#69F0AE</color>
+
+    <!-- Secondary Color -->
+    <color name="secondary">#FF6584</color>
+
+    <!-- Background Colors - Light Theme -->
+    <color name="background">#F5F5F5</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_light">#FAFAFA</color>
+
+    <!-- Text Colors - High Contrast -->
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#5A5A5A</color>
+    <color name="text_hint">#888888</color>
+
+    <!-- Status Colors -->
+    <color name="error">#D32F2F</color>
+    <color name="success">#2E7D32</color>
+    <color name="warning">#F57C00</color>
+
+    <!-- Divider -->
+    <color name="divider">#E0E0E0</color>
+
+    <!-- Card Background -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="bottom_nav_color">#00C853</color>
+</resources>
