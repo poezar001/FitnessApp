@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="@color/surface"
+    android:layout_marginBottom="8dp">
+
+    <TextView
+        android:id="@+id/tvDay"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Monday"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary" />
+
+    <TextView
+        android:id="@+id/tvDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="10min"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginEnd="12dp" />
+
+    <TextView
+        android:id="@+id/tvActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HIIT"
+        android:textSize="14sp"
+        android:textColor="@color/primary"
+        android:layout_marginEnd="12dp" />
+
+    <TextView
+        android:id="@+id/btnAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Activity"
+        android:textSize="12sp"
+        android:textColor="@color/primary"
+        android:padding="8dp"
+        android:background="@drawable/bg_tab_default"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

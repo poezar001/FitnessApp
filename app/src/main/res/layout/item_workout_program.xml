@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="200dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardBackgroundColor="@color/surface"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:elevation="2dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Full-width Image -->
+        <ImageView
+            android:id="@+id/ivProgramIcon"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/act_pilates" />
+
+        <!-- Dark Overlay -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#66000000" />
+
+        <!-- Content on Image -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:orientation="vertical"
+            android:gravity="bottom"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvProgramTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12 Stretchy Yoga Flows"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:maxLines="2" />
+
+            <TextView
+                android:id="@+id/tvProgramDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Designed for Relaxation"
+                android:textSize="12sp"
+                android:textColor="#CCFFFFFF"
+                android:layout_marginTop="2dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvProgramDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10 min"
+                    android:textSize="10sp"
+                    android:textColor="#CCFFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" • "
+                    android:textSize="10sp"
+                    android:textColor="#CCCCCC" />
+
+                <TextView
+                    android:id="@+id/tvProgramEpisodes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12 EPISODES"
+                    android:textSize="10sp"
+                    android:textColor="#CCFFFFFF" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Watch Now Badge -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="8dp"
+            android:background="@color/primary"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="▶ Watch Now"
+            android:textSize="10sp"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:alpha="0.9" />
+
+    </FrameLayout>
+</androidx.cardview.widget.CardView>
