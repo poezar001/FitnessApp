@@ -95,4 +95,25 @@ class GoalSettingActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun setupGoalProgress() {
+        lifecycleScope.launch {
+            val goals = mainRepository.getActiveGoals()
+            goals.forEach { goal ->
+                val currentValue = when (goal.type) {
+                    "Calories" -> mainRepository.getTotalCaloriesThisWeek()
+                    "Distance" -> mainRepository.getTotalDistanceThisWeek()
+                    "Workouts" -> mainRepository.getTotalWorkoutsThisWeek().toDouble()
+                    else -> goal.currentValue
+                }
+                val progress = ((currentValue / goal.targetValue) * 100).toInt().coerceIn(0, 100)
+                showGoalProgress(goal.type, progress, currentValue, goal.targetValue, goal.unit)
+            }
+        }
+    }
+
+    private fun showGoalProgress(type: String, progress: Int, current: Double, target: Double, unit: String) {
+        // Display progress in UI
+        // This could be a progress bar or text view
+    }
 }

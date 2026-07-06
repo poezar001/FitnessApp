@@ -28,6 +28,11 @@
     <string name="cat_walking">\uD83D\uDEB6 Walking</string>
     <string name="cat_yoga">\uD83E\uDDD8 Yoga</string>
     <string name="cat_all">All</string>
+    <string name="cat_meditation">\uD83E\uDDE0 Meditation</string>
+    <string name="cat_strength">\uD83C\uDFCB\uFE0F Strength</string>
+    <string name="cat_pilates">\uD83E\uDDD8\u200D\u2640\uFE0F Pilates</string>
+    <string name="cat_kickboxing">\uD83E\uDD4A Kickboxing</string>
+    <string name="cat_treadmill">\uD83C\uDFC3\u200D\u2642\uFE0F Treadmill</string>
 
     <!-- Achievement and Icons -->
     <string name="icon_trophy">\uD83C\uDFC6</string>
@@ -39,6 +44,9 @@
     <string name="icon_star">\uD83C\uDF1F</string>
     <string name="icon_bolt">\u26A1</string>
     <string name="icon_fire">\uD83D\uDD25</string>
+    <string name="icon_rocket">\uD83D\uDE80</string>
+    <string name="icon_sparkles">\u2728</string>
+    <string name="icon_back">\u2190</string>
 
     <!-- Levels -->
     <string name="level_beginner">\uD83C\uDF1F Beginner</string>
@@ -53,6 +61,12 @@
     <string name="label_today">Today</string>
     <string name="label_weekly">Weekly</string>
     <string name="label_monthly">Monthly</string>
+    <string name="plan_get_started">\uD83D\uDE80 Get Started</string>
+    <string name="plan_custom">\u2728 Custom Plan</string>
+    <string name="label_back">\u2190 Back</string>
+    <string name="plan_duration_format">%1$d DAYS \u2022 %2$dMIN/DAY</string>
+    <string name="preview_arrow">Preview \u2192</string>
+    <string name="create_arrow">Create \u2192</string>
 
     <string name="member_since">Member since: %s</string>
 </resources>

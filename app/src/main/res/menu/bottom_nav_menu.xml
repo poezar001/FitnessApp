@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_activity"
         android:title="Activity" />
     <item
+        android:id="@+id/navigation_fitness"
+        android:icon="@drawable/ic_fitness_plus"
+        android:title="Fitness+" />
+    <item
         android:id="@+id/navigation_analytics"
         android:icon="@drawable/ic_analytics"
         android:title="Analytics" />

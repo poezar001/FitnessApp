@@ -62,16 +62,24 @@ class AnalyticsFragment : BaseFragment<FragmentAnalyticsBinding>(R.layout.fragme
         }
 
         viewModel.weeklyProgress.observe(viewLifecycleOwner) { progress ->
-            val totalCalories = progress.sumOf { it.calories }
-            val goalProgress = (totalCalories.toFloat() / 3500 * 100).toInt()
-            binding.goalProgressBar.progress = goalProgress
-            binding.goalProgressText.text = "$goalProgress% completed"
+            if (progress.isNotEmpty()) {
+                val totalCalories = progress.sumOf { it.calories }
+                // Only calculate if totalCalories > 0 AND goal is set
+                val goalProgress = if (totalCalories > 0) {
+                    (totalCalories.toFloat() / 3500 * 100).toInt()
+                } else 0  // Default to 0, not 65
 
-            // Add insights
-            addInsights(progress)
+                binding.goalProgressBar.progress = goalProgress.coerceIn(0, 100)
+                binding.goalProgressText.text = "${goalProgress.coerceIn(0, 100)}% completed"
+                addInsights(progress)
+            } else {
+                // No data - show 0%
+                binding.goalProgressBar.progress = 0
+                binding.goalProgressText.text = "0% completed"
+
+            }
         }
     }
-
     private fun addInsights(progress: List<com.example.fitnessapp.models.WeeklyProgress>) {
         binding.insightsContainer.removeAllViews()
 

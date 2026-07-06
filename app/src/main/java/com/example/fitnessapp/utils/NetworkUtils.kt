@@ -154,8 +154,14 @@ object NetworkUtils {
             callback(emptyList(), WorkoutSummary(0, 0, 0, 0.0))
             return
         }
+        val filterParam = when (filter.lowercase()) {
+            "today" -> "today"
+            "weekly" -> "weekly"
+            "monthly" -> "monthly"
+            else -> "all"
+        }
 
-        val url = "${BASE_URL}get_workouts.php?user_id=$userId&filter=$filter&type=$type"
+        val url = "${BASE_URL}get_workouts.php?user_id=$userId&filter=$filterParam&type=$type"
 
         val request = StringRequest(
             Request.Method.GET, url,
@@ -352,6 +358,8 @@ object NetworkUtils {
     }
 
 
+
+
     fun setGoal(context: Context, userId: Int, goalType: String, targetValue: Double, unit: String, targetDate: String, callback: (Boolean, String) -> Unit) {
         if (!isNetworkAvailable(context)) {
             callback(false, "No internet connection")
@@ -384,6 +392,56 @@ object NetworkUtils {
         request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
         requestQueue.add(request)
     }
+
+    fun getGoals(
+        context: Context,
+        userId: Int,
+        callback: (List<Goal>) -> Unit
+    ) {
+        if (!isNetworkAvailable(context)) {
+            callback(emptyList())
+            return
+        }
+
+        val url = "${BASE_URL}get_goals.php?user_id=$userId"
+
+        val request = StringRequest(
+            Request.Method.GET, url,
+            { response ->
+                try {
+                    val json = JSONObject(response)
+                    if (json.getBoolean("success")) {
+                        val goalsArray = json.getJSONArray("goals")
+                        val goals = mutableListOf<Goal>()
+                        for (i in 0 until goalsArray.length()) {
+                            val obj = goalsArray.getJSONObject(i)
+                            goals.add(
+                                Goal(
+                                    id = obj.getInt("id"),
+                                    type = obj.getString("type"),
+                                    targetValue = obj.getDouble("target"),
+                                    currentValue = obj.getDouble("current"),
+                                    unit = obj.getString("unit"),
+                                    progress = obj.getDouble("progress"),
+                                    targetDate = obj.getString("target_date"),
+                                    status = obj.getString("status")
+                                )
+                            )
+                        }
+                        callback(goals)
+                    } else {
+                        callback(emptyList())
+                    }
+                } catch (e: Exception) {
+                    callback(emptyList())
+                }
+            },
+            { error -> callback(emptyList()) }
+        )
+        requestQueue.add(request)
+    }
+
+
 }
 
 data class ApiGoal(

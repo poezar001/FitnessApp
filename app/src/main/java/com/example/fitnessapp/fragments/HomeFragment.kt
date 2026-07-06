@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fitnessapp.R
 import com.example.fitnessapp.activities.AddWorkoutActivity
 import com.example.fitnessapp.activities.GoalSettingActivity
+import com.example.fitnessapp.activities.WorkoutDetailActivity
 import com.example.fitnessapp.base.BaseFragment
 import com.example.fitnessapp.adapters.WorkoutAdapter
 import com.example.fitnessapp.databinding.FragmentHomeBinding
@@ -40,11 +41,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(R.layout.fragment_home) {
     }
 
     private fun setupRecyclerView() {
-        // Set LayoutManager for RecyclerView
         binding.todayWorkoutsRecycler.layoutManager = LinearLayoutManager(requireContext())
 
         workoutAdapter = WorkoutAdapter(emptyList()) { workout ->
-            showToast("Selected: ${workout.activityType}")
+            // Navigate to WorkoutDetailActivity
+            val intent = Intent(requireContext(), WorkoutDetailActivity::class.java)
+            intent.putExtra("workout_data", workout)
+            startActivity(intent)
         }
         binding.todayWorkoutsRecycler.adapter = workoutAdapter
     }
@@ -64,7 +67,45 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(R.layout.fragment_home) {
     }
 
     override fun setupObservers() {
-        // Daily stats observer
+        viewModel.activeGoal.observe(viewLifecycleOwner) { goal ->
+            if (goal != null) {
+                when (goal.type) {
+                    "Weight" -> {
+                        val currentWeight = goal.currentValue
+                        val targetWeight = goal.targetValue
+                        val progress = goal.progress.toInt()
+                        val toLose = (currentWeight - targetWeight).coerceAtLeast(0.0)
+
+                        binding.goalProgressText.text = "$progress% completed"
+                        binding.remainingText.text = if (toLose > 0) {
+                            String.format("%.1f kg to go!", toLose)
+                        } else {
+                            "🎉 Goal achieved!"
+                        }
+
+                        ChartUtils.setupPieChart(
+                            binding.progressChart,
+                            progress.toFloat(),
+                            Color.parseColor("#00FF00")
+                        )
+                    }
+                    else -> {
+                        // Handle other goal types
+                        val progress = goal.progress.toInt()
+                        val remaining = (goal.targetValue - goal.currentValue).coerceAtLeast(0.0)
+                        binding.goalProgressText.text = "$progress% completed"
+                        binding.remainingText.text = String.format("%.1f %s to go!", remaining, goal.unit)
+                        ChartUtils.setupPieChart(
+                            binding.progressChart,
+                            progress.toFloat(),
+                            Color.parseColor("#00FF00")
+                        )
+                    }
+                }
+            }
+        }
+
+        // ====== DAILY STATS OBSERVER ======
         viewModel.dailyStats.observe(viewLifecycleOwner) { stats ->
             stats?.let {
                 binding.caloriesValue.text = it.caloriesBurned.toString()
@@ -73,57 +114,17 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(R.layout.fragment_home) {
             }
         }
 
-        // Today workouts observer - Shows REAL today's activities
+        // ====== TODAY WORKOUTS OBSERVER ======
         viewModel.todayWorkouts.observe(viewLifecycleOwner) { workouts ->
             workouts?.let {
                 workoutAdapter.updateData(it)
             }
         }
 
-        // Username observer
+        // ====== USERNAME OBSERVER ======
         viewModel.username.observe(viewLifecycleOwner) { username ->
             username?.let {
                 binding.welcomeText.text = "Good ${getTimeOfDay()}, $username!"
-            }
-        }
-
-        // Loading observer
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading == true) {
-                // Show loading indicator if you have one
-            }
-        }
-
-        // Goal Progress observer
-        viewModel.goalProgress.observe(viewLifecycleOwner) { goalProgress ->
-            if (goalProgress != null) {
-                binding.goalProgressText.text = "${goalProgress.progress}% completed"
-
-                when (goalProgress.goalType) {
-                    "Weight" -> {
-                        binding.remainingText.text = String.format("%.1f %s to go!",
-                            goalProgress.remaining,
-                            goalProgress.unit)
-                    }
-                    else -> {
-                        binding.remainingText.text = "${goalProgress.remaining.toInt()} ${goalProgress.unit} to go!"
-                    }
-                }
-
-                // Update progress chart
-                ChartUtils.setupPieChart(
-                    binding.progressChart,
-                    goalProgress.progress.toFloat(),
-                    Color.parseColor("#00FF00")
-                )
-            } else {
-                binding.goalProgressText.text = "No active goal"
-                binding.remainingText.text = "Set a goal to start!"
-                ChartUtils.setupPieChart(
-                    binding.progressChart,
-                    0f,
-                    Color.parseColor("#CCCCCC")
-                )
             }
         }
     }

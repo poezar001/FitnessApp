@@ -56,7 +56,7 @@ object ChartUtils {
         lineChart.invalidate()
     }
 
-    // Keep your original version intact!
+    // For Activity Distribution Pie Chart
     fun setupPieChart(pieChart: PieChart, values: Map<String, Float>, colors: List<Int>) {
         val entries = values.map { PieEntry(it.value, it.key) }
         val dataSet = PieDataSet(entries, "Activities")
@@ -73,18 +73,19 @@ object ChartUtils {
         pieChart.invalidate()
     }
 
-    // ADD THIS NEW OVERLOADED FUNCTION FOR YOUR PROGRESS RING SCREEN
+    // For Goal Progress Ring (NEW - The one you need for Home screen)
     fun setupPieChart(pieChart: PieChart, completedPercentage: Float, baseColor: Int) {
-        val remaining = if (100f - completedPercentage < 0f) 0f else 100f - completedPercentage
+        // Cap at 100 to prevent negative values
+        val safeCompleted = completedPercentage.coerceIn(0f, 100f)
+        val remaining = 100f - safeCompleted
 
         // Split the chart into completed vs remaining slices
         val entries = ArrayList<PieEntry>()
-        entries.add(PieEntry(completedPercentage, ""))
-        entries.add(PieEntry(remaining, ""))
+        entries.add(PieEntry(safeCompleted, ""))  // Completed portion
+        entries.add(PieEntry(remaining, ""))      // Remaining portion
 
         val dataSet = PieDataSet(entries, "")
-        // Completed slice gets your theme green, remaining track gets a subtle dark color
-        dataSet.colors = listOf(baseColor, Color.parseColor("#222222"))
+        dataSet.colors = listOf(baseColor, Color.parseColor("#333333"))  // Subtle dark gray for remaining
         dataSet.setDrawValues(false) // Clean ring look without raw percentage numbers inside
 
         val pieData = PieData(dataSet)

@@ -7,9 +7,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitnessapp.models.DailyStats
+import com.example.fitnessapp.models.Goal
 import com.example.fitnessapp.models.Workout
 import com.example.fitnessapp.repository.MainRepository
-import com.example.fitnessapp.repository.Goal
 import kotlinx.coroutines.launch
 
 data class GoalProgress(
@@ -36,12 +36,6 @@ class HomeViewModel(
     private val _username = MutableLiveData<String>()
     val username: LiveData<String> = _username
 
-    private val _goalProgress = MutableLiveData<GoalProgress?>()
-    val goalProgress: LiveData<GoalProgress?> = _goalProgress
-
-    private val _currentWeight = MutableLiveData<Double>()
-    val currentWeight: LiveData<Double> = _currentWeight
-
     private val _activeGoal = MutableLiveData<Goal?>()
     val activeGoal: LiveData<Goal?> = _activeGoal
 
@@ -49,104 +43,77 @@ class HomeViewModel(
         viewModelScope.launch {
             _isLoading.value = true
 
-            // Load daily stats
             _dailyStats.value = repository.getDailyStats()
-
-            // Load today's workouts (REAL data from database)
             _todayWorkouts.value = repository.getTodayWorkouts()
-
             _username.value = repository.getUsername()
 
-            // Load current weight from profile
-            val profile = repository.getUserProfile()
-            _currentWeight.value = profile?.weight?.toDouble() ?: 70.0
-
-            // Load goal progress
-            loadGoalProgress()
+            // Load active goal with current progress
+            loadActiveGoal()
 
             _isLoading.value = false
         }
     }
 
-    private fun loadGoalProgress() {
+    private fun loadActiveGoal() {
         viewModelScope.launch {
             val goals = repository.getActiveGoals()
-            _activeGoal.value = goals.firstOrNull()
-
             if (goals.isNotEmpty()) {
                 val goal = goals.first()
 
-                when (goal.type) {
+                // Get current progress based on goal type
+                val currentValue = when (goal.type) {
+                    "Calories" -> repository.getTotalCaloriesThisWeek()
+                    "Distance" -> repository.getTotalDistanceThisWeek()
+                    "Workouts" -> repository.getTotalWorkoutsThisWeek()
                     "Weight" -> {
-                        val currentWeight = _currentWeight.value ?: 70.0
-                        val targetWeight = goal.targetValue
+                        val profile = repository.getUserProfile()
+                        // Get starting weight (from when goal was set)
+                        val startWeight = goal.startWeight ?: profile?.weight?.toDouble() ?: 70.0
+                        val currentWeight = profile?.weight?.toDouble() ?: 70.0
 
-                        if (currentWeight > 0 && targetWeight > 0) {
-                            val difference = currentWeight - targetWeight
+                        // Calculate progress based on weight lost
+                        val totalToLose = startWeight - goal.targetValue
+                        val lostSoFar = startWeight - currentWeight
 
-                            if (difference > 0) {
-                                // Losing weight
-                                val startingWeight = getStartingWeight()
-                                val totalToLose = startingWeight - targetWeight
-                                val lostSoFar = startingWeight - currentWeight
-
-                                val progress = if (totalToLose > 0) {
-                                    ((lostSoFar / totalToLose) * 100).toInt().coerceIn(0, 100)
-                                } else 0
-
-                                _goalProgress.value = GoalProgress(
-                                    progress = progress,
-                                    remaining = difference,
-                                    unit = goal.unit,
-                                    goalType = "Weight"
-                                )
-                            } else if (difference < 0) {
-                                // Gaining weight
-                                _goalProgress.value = GoalProgress(
-                                    progress = 0,
-                                    remaining = -difference,
-                                    unit = goal.unit,
-                                    goalType = "Weight"
-                                )
-                            } else {
-                                _goalProgress.value = GoalProgress(
-                                    progress = 100,
-                                    remaining = 0.0,
-                                    unit = goal.unit,
-                                    goalType = "Weight"
-                                )
-                            }
+                        // FIXED: Return the progress value, not using return@launch
+                        if (totalToLose > 0) {
+                            lostSoFar / totalToLose
+                        } else {
+                            0.0
                         }
                     }
-                    else -> {
-                        // For Calories, Distance, Workouts goals
-                        val progress = if (goal.targetValue > 0) {
-                            ((goal.currentValue / goal.targetValue) * 100).toInt().coerceIn(0, 100)
-                        } else 0
-                        val remaining = (goal.targetValue - goal.currentValue).coerceAtLeast(0.0)
-
-                        _goalProgress.value = GoalProgress(
-                            progress = progress,
-                            remaining = remaining,
-                            unit = goal.unit,
-                            goalType = goal.type
-                        )
-                    }
+                    else -> goal.currentValue
                 }
+
+                // Calculate progress percentage
+                val progress = if (goal.targetValue > 0 && goal.type != "Weight") {
+                    ((currentValue / goal.targetValue) * 100).toFloat().coerceIn(0f, 100f)
+                } else if (goal.type == "Weight") {
+                    // For weight, currentValue is already a percentage (0.0 to 1.0)
+                    (currentValue * 100).toFloat().coerceIn(0f, 100f)
+                } else {
+                    0f
+                }
+
+                val updatedGoal = goal.copy(
+                    currentValue = if (goal.type == "Weight") {
+                        // Store the weight itself in currentValue
+                        repository.getUserProfile()?.weight?.toDouble() ?: 70.0
+                    } else {
+                        currentValue
+                    },
+                    progress = progress.toDouble()
+                )
+                _activeGoal.value = updatedGoal
             } else {
-                _goalProgress.value = null
+                _activeGoal.value = null
             }
         }
     }
 
-    private fun getStartingWeight(): Double {
-        val startingWeight = sharedPrefs.getFloat("starting_weight", 0f).toDouble()
-        return if (startingWeight > 0) {
-            startingWeight
-        } else {
-            val current = _currentWeight.value ?: 70.0
-            sharedPrefs.edit().putFloat("starting_weight", current.toFloat()).apply()
-            current
-        }
+    fun calculateGoalProgress(): Int {
+        val stats = _dailyStats.value ?: return 0
+        val goal = 800
+        return (stats.caloriesBurned.toFloat() / goal * 100).toInt()
     }
 }

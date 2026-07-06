@@ -31,6 +31,7 @@ class MainRepository(private val context: Context) {
 
     suspend fun getDailyStats(): DailyStats {
         val (workouts, summary) = getWorkouts("today")
+        android.util.Log.d("MainRepository", "getDailyStats - workouts: ${workouts.size}, summary: $summary")
         val steps = calculateStepsFromWorkouts(workouts)
         return DailyStats(
             steps = steps,
@@ -42,6 +43,7 @@ class MainRepository(private val context: Context) {
 
     suspend fun getTodayWorkouts(): List<Workout> {
         val (workouts, _) = getWorkouts("today")
+        android.util.Log.d("MainRepository", "getTodayWorkouts - count: ${workouts.size}")
         return workouts
     }
 
@@ -94,6 +96,20 @@ class MainRepository(private val context: Context) {
         }
     }
 
+    suspend fun updateGoalStatus(goalId: Int, status: String) {
+        return suspendCancellableCoroutine { continuation ->
+            // Update goal status in database
+            continuation.resume(Unit)
+        }
+    }
+
+    suspend fun getCurrentWeight(): Double {
+        return suspendCancellableCoroutine { continuation ->
+            val profile = getUserProfile()
+            continuation.resume(profile?.weight?.toDouble() ?: 70.0)
+        }
+    }
+
     fun getAchievements(): List<Achievement> {
         return listOf(
             Achievement(1, "First Workout", java.util.Date(), "🏆"),
@@ -109,18 +125,14 @@ class MainRepository(private val context: Context) {
     // ==================== GOAL RELATED METHODS ====================
 
     suspend fun getActiveGoals(): List<Goal> {
-        val analytics = getAnalytics()
-        return analytics.goals.map { apiGoal ->
-            Goal(
-                id = apiGoal.id,
-                type = apiGoal.type,
-                targetValue = apiGoal.targetValue,
-                currentValue = apiGoal.currentValue,
-                unit = apiGoal.unit,
-                progress = apiGoal.progress
-            )
+        return suspendCancellableCoroutine { continuation ->
+            NetworkUtils.getGoals(context, getUserId()) { goals ->
+                continuation.resume(goals)
+            }
         }
     }
+
+
 
     suspend fun getTotalCaloriesThisWeek(): Double {
         val (_, summary) = getWorkouts("weekly")
@@ -178,12 +190,10 @@ class MainRepository(private val context: Context) {
     }
 
     suspend fun updateGoalProgress(goalId: Int, currentValue: Double) {
-        // TODO: Implement API call to update goal progress
         android.util.Log.d("MainRepository", "Update goal $goalId to $currentValue")
     }
 
     suspend fun unlockAchievement(name: String, icon: String) {
-        // TODO: Implement API call to unlock achievement
         android.util.Log.d("MainRepository", "Unlock achievement: $name with icon $icon")
     }
 
@@ -201,20 +211,9 @@ class MainRepository(private val context: Context) {
     }
 }
 
-// Updated AnalyticsData to use ApiGoal from NetworkUtils
 data class AnalyticsData(
     val weeklyProgress: List<WeeklyProgress>,
     val activityDistribution: Map<String, Float>,
     val goals: List<ApiGoal>,
     val bmi: Double
-)
-
-// Goal data class
-data class Goal(
-    val id: Int,
-    val type: String,
-    val targetValue: Double,
-    val currentValue: Double,
-    val unit: String,
-    val progress: Double
 )

@@ -5,9 +5,10 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
+import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.fitnessapp.R
@@ -18,6 +19,8 @@ class MainDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainDashboardBinding
     private lateinit var mainRepository: MainRepository
+    private lateinit var navController: NavController
+    private lateinit var appBarConfiguration: AppBarConfiguration
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,26 +38,26 @@ class MainDashboardActivity : AppCompatActivity() {
     }
 
     private fun setupNavigation() {
-        // 1. SAFELY find the NavHostFragment wrapper from the support manager
+        // Get NavController from NavHostFragment
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
 
-        // 2. Get the actual controller instance from the host fragment
-        val navController = navHostFragment.navController
-
-        // 3. Set up the Action Bar configuration smoothly
-        val appBarConfiguration = AppBarConfiguration(
+        appBarConfiguration = AppBarConfiguration(
             setOf(
                 R.id.navigation_home,
                 R.id.navigation_activity,
+                R.id.navigation_fitness,
                 R.id.navigation_analytics,
                 R.id.navigation_profile
             )
         )
-
-        // 4. Link the toolbar and bottom navigation menu elements
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.bottomNavigationView.setupWithNavController(navController)
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -63,11 +66,19 @@ class MainDashboardActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_logout) {
-            mainRepository.logout()
-            startActivity(Intent(this, LoginActivity::class.java))
-            finishAffinity()
-            return true
+        when (item.itemId) {
+            R.id.action_notifications -> {
+                startActivity(Intent(this, NotificationActivity::class.java))
+                return true
+            }
+            R.id.action_logout -> {
+                mainRepository.logout()
+                val intent = Intent(this, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finishAffinity()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }

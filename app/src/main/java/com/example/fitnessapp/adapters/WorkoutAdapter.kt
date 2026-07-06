@@ -35,21 +35,49 @@ class WorkoutAdapter(
 
         fun bind(workout: Workout) {
             binding.apply {
+                // Set activity name
                 tvActivityType.text = workout.activityType
-                tvDuration.text = "${workout.durationMinutes} mins"
-                tvCalories.text = "${workout.caloriesBurned} kcal"
+
+                // Set activity icon based on type
+                tvActivityIcon.text = getActivityIcon(workout.activityType)
+
+                // Set date
                 tvDate.text = DateUtils.formatDate(workout.workoutDate)
 
+                // Set duration
+                tvDuration.text = "${workout.durationMinutes} mins"
+
+                // Set calories
+                tvCalories.text = "${workout.caloriesBurned} kcal"
+
+                // Show/hide distance
                 if (workout.distanceKm != null && workout.distanceKm > 0) {
-                    tvDistance.text = "${workout.distanceKm} km"
+                    tvDistance.text = String.format("%.2f km", workout.distanceKm)
                     tvDistance.visibility = android.view.View.VISIBLE
                 } else {
                     tvDistance.visibility = android.view.View.GONE
                 }
 
+                // Click listener - This will trigger the onItemClick in ActivityFragment/HomeFragment
                 root.setOnClickListener {
                     onItemClick(workout)
                 }
+            }
+        }
+
+        private fun getActivityIcon(activityType: String): String {
+            return when (activityType) {
+                "Running" -> "🏃"
+                "Cycling" -> "🚲"
+                "Walking" -> "🚶"
+                "Weightlifting" -> "💪"
+                "Yoga" -> "🧘"
+                "Meditation" -> "🧠"
+                "Strength" -> "🏋️"
+                "Pilates" -> "🧘‍♀️"
+                "Kickboxing" -> "🥊"
+                "Treadmill" -> "🏃‍♂️"
+                else -> "🏋️"
             }
         }
     }

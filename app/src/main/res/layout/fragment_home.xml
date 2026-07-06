@@ -83,7 +83,7 @@
                                 android:id="@+id/goalProgressText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="450/600 kcal"
+                                android:text="0% completed"
                                 android:textSize="18sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/primary" />
@@ -93,13 +93,15 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="150 kcal to go!"
+                                android:text="0 kcal to go!"
                                 android:textColor="@color/text_hint"
                                 android:textSize="12sp" />
                         </LinearLayout>
                     </androidx.constraintlayout.widget.ConstraintLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+            <!-- REMOVED Goal Progress Section - No longer needed -->
 
             <!-- Daily Summary Cards -->
             <LinearLayout
@@ -125,7 +127,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/label_calories"
+                            android:text="Calories"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
 
@@ -165,7 +167,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/label_steps"
+                            android:text="Steps"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
 
@@ -204,7 +206,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/label_time"
+                            android:text="Time"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
 
@@ -249,11 +251,9 @@
                     android:layout_height="54dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:text="@string/action_add_workout"
-                    android:textColor="@android:color/holo_green_light"
+                    android:text="+ ADD WORKOUT"
+                    android:textColor="@color/primary"
                     android:textSize="11sp"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     app:strokeColor="@color/primary" />
 
@@ -264,11 +264,9 @@
                     android:layout_marginStart="3dp"
                     android:layout_marginEnd="3dp"
                     android:layout_weight="1"
-                    android:text="@string/action_start_run"
-                    android:textColor="@android:color/holo_green_light"
+                    android:text="START RUN"
+                    android:textColor="@color/primary"
                     android:textSize="11sp"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     app:strokeColor="@color/primary" />
 
@@ -278,11 +276,9 @@
                     android:layout_height="54dp"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:text="@string/action_set_goal"
-                    android:textColor="@android:color/holo_green_light"
+                    android:text="SET GOAL"
+                    android:textColor="@color/primary"
                     android:textSize="11sp"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     app:strokeColor="@color/primary" />
             </LinearLayout>
@@ -303,8 +299,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:nestedScrollingEnabled="false" />
-
-
 
         </LinearLayout>
     </ScrollView>

@@ -1,18 +1,20 @@
 package com.example.fitnessapp.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fitnessapp.models.DailyStats
-import com.example.fitnessapp.models.WeeklyProgress
 import com.example.fitnessapp.models.Workout
 import com.example.fitnessapp.models.WorkoutSummary
 import com.example.fitnessapp.repository.MainRepository
 import com.example.fitnessapp.utils.ApiGoal
+import com.example.fitnessapp.utils.GoalNotificationHelper
 import kotlinx.coroutines.launch
 
 class ActivityViewModel(private val repository: MainRepository) : ViewModel() {
+
+    private lateinit var context: Context
 
     private val _goals = MutableLiveData<List<ApiGoal>>()
     val goals: LiveData<List<ApiGoal>> = _goals
@@ -38,18 +40,9 @@ class ActivityViewModel(private val repository: MainRepository) : ViewModel() {
     private val _saveResult = MutableLiveData<Boolean>()
     val saveResult: LiveData<Boolean> = _saveResult
 
-    // Additional LiveData for Home and Analytics sync
-    private val _dailyStats = MutableLiveData<DailyStats>()
-    val dailyStats: LiveData<DailyStats> = _dailyStats
-
-    private val _todayWorkouts = MutableLiveData<List<Workout>>()
-    val todayWorkouts: LiveData<List<Workout>> = _todayWorkouts
-
-    private val _weeklyProgress = MutableLiveData<List<WeeklyProgress>>()
-    val weeklyProgress: LiveData<List<WeeklyProgress>> = _weeklyProgress
-
-    private val _activityDistribution = MutableLiveData<Map<String, Float>>()
-    val activityDistribution: LiveData<Map<String, Float>> = _activityDistribution
+    fun init(context: Context) {
+        this.context = context
+    }
 
     fun loadWorkouts() {
         viewModelScope.launch {
@@ -68,31 +61,70 @@ class ActivityViewModel(private val repository: MainRepository) : ViewModel() {
             val success = repository.saveWorkout(workout)
             _saveResult.value = success
             if (success) {
-                loadWorkouts()           // Refresh activity list
-                refreshHomeData()        // Refresh home screen stats
-                refreshAnalytics()       // Refresh analytics charts
-                checkAndUnlockAchievements() // Check for new achievements
-                updateGoalProgress()      // Update goal progress
+                loadWorkouts()
+                refreshHomeData()
+                refreshAnalytics()
+                checkAndUnlockAchievements()
+                updateGoalProgress()
+
+                // Send notification after workout
+                sendGoalNotification(workout)
             }
             _isLoading.value = false
         }
     }
 
+    private suspend fun sendGoalNotification(workout: Workout) {
+        try {
+            val goals = repository.getActiveGoals()
+            if (goals.isNotEmpty()) {
+                val goal = goals.first()
+
+                val currentCalories = repository.getTotalCaloriesThisWeek()
+                val targetCalories = goal.targetValue
+                val progress = if (targetCalories > 0) {
+                    ((currentCalories / targetCalories) * 100).toInt().coerceIn(0, 100)
+                } else 0
+                val remaining = (targetCalories - currentCalories).coerceAtLeast(0.0)
+                val userId = repository.getUserId()
+
+                val notificationHelper = GoalNotificationHelper(context)
+
+                if (progress >= 100) {
+                    notificationHelper.sendGoalAchievedNotification(
+                        goal.type,
+                        targetCalories,
+                        goal.unit,
+                        userId
+                    )
+                } else {
+                    notificationHelper.sendGoalProgressNotification(
+                        goal.type,
+                        progress,
+                        remaining,
+                        goal.unit,
+                        workout.caloriesBurned,
+                        userId
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+
     private fun refreshHomeData() {
         viewModelScope.launch {
             val stats = repository.getDailyStats()
-            _dailyStats.postValue(stats)
-
             val todayWorkouts = repository.getWorkouts("Today", "All")
-            _todayWorkouts.postValue(todayWorkouts.first)
         }
     }
 
     private fun refreshAnalytics() {
         viewModelScope.launch {
             val analytics = repository.getAnalytics()
-            _weeklyProgress.postValue(analytics.weeklyProgress)
-            _activityDistribution.postValue(analytics.activityDistribution)
         }
     }
 
