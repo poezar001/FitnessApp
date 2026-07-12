@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fitnessapp.R
@@ -59,9 +60,19 @@ class FitnessForYouFragment : Fragment() {
     }
 
     private fun setupTrainers() {
-        trainerAdapter = TrainerAdapter(getTrainers())
+        // For You page: show quote and experience, hide selection
+        val adapter = TrainerAdapter(
+            trainers = getTrainers(),
+            onItemClick = { trainer ->
+                // This will show Toast message when clicked
+                Toast.makeText(requireContext(), "Selected: ${trainer.name}", Toast.LENGTH_SHORT).show()
+            },
+            showQuote = true,
+            showExperience = true,
+            showSelection = false  // ← IMPORTANT: No selection for For You page
+        )
         binding.trainersRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        binding.trainersRecycler.adapter = trainerAdapter
+        binding.trainersRecycler.adapter = adapter
     }
 
     private fun getTrainerTips(): List<TrainerTip> {

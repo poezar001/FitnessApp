@@ -1,6 +1,5 @@
 package com.example.fitnessapp.viewmodels
 
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -11,13 +10,7 @@ import com.example.fitnessapp.models.Goal
 import com.example.fitnessapp.models.Workout
 import com.example.fitnessapp.repository.MainRepository
 import kotlinx.coroutines.launch
-
-data class GoalProgress(
-    val progress: Int,
-    val remaining: Double,
-    val unit: String,
-    val goalType: String
-)
+import java.util.Calendar
 
 class HomeViewModel(
     private val repository: MainRepository,
@@ -39,6 +32,9 @@ class HomeViewModel(
     private val _activeGoal = MutableLiveData<Goal?>()
     val activeGoal: LiveData<Goal?> = _activeGoal
 
+    private val _unreadNotificationCount = MutableLiveData<Int>()
+    val unreadNotificationCount: LiveData<Int> = _unreadNotificationCount
+
     fun loadData() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -46,74 +42,103 @@ class HomeViewModel(
             _dailyStats.value = repository.getDailyStats()
             _todayWorkouts.value = repository.getTodayWorkouts()
             _username.value = repository.getUsername()
+            _unreadNotificationCount.value = repository.getUnreadNotificationCount()
 
-            // Load active goal with current progress
-            loadActiveGoal()
+            val stats = _dailyStats.value
+            loadActiveGoal(stats)
 
             _isLoading.value = false
         }
     }
 
-    private fun loadActiveGoal() {
-        viewModelScope.launch {
-            val goals = repository.getActiveGoals()
-            if (goals.isNotEmpty()) {
-                val goal = goals.first()
+    private suspend fun loadActiveGoal(todayStats: DailyStats?) {
+        val goals = repository.getActiveGoals()
+        if (goals.isNotEmpty()) {
+            val goal = goals.first()
+            val stats = todayStats ?: repository.getDailyStats()
 
-                // Get current progress based on goal type
+            if (goal.type == "Calories") {
+                val totalMasterGoal = goal.targetValue // e.g., 2000.0
+                val todayBurned = stats?.caloriesBurned?.toDouble() ?: 0.0 // e.g., 233.0
+
+                // Get all-time workouts to separate history from today
+                val (allWorkouts, _) = repository.getWorkouts("all")
+
+                // Get today's calendar boundaries to isolate older records
+                val todayStart = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.time
+
+                // Sum up calories burned strictly before today
+                val yesterdayBurned = allWorkouts
+                    .filter { it.workoutDate.before(todayStart) }
+                    .sumOf { it.caloriesBurned.toDouble() } // e.g., 170.0
+
+                // Implement calculation rules
+                val remainingAtStartOfToday = (totalMasterGoal - yesterdayBurned).coerceAtLeast(0.0) // 1830.0
+                val currentRemaining = (remainingAtStartOfToday - todayBurned).coerceAtLeast(0.0) // 1597.0
+
+                // Today's effort percentage against the balance remaining this morning
+                val progressPercentage = if (remainingAtStartOfToday > 0.0) {
+                    ((todayBurned / remainingAtStartOfToday) * 100).coerceIn(0.0, 100.0)
+                } else {
+                    0.0
+                }
+
+                // FIXED: Mark the goal complete if target is cleared and not yet status marked
+                if (currentRemaining <= 0.0 && goal.status != "completed") {
+                    repository.updateGoalStatus(goal.id, "completed")
+                    repository.unlockAchievement("Goal Achieved", "🔥")
+                }
+
+                // Pass the remaining calories balance downstream into custom view fields
+                val updatedGoal = goal.copy(
+                    currentValue = currentRemaining,
+                    progress = progressPercentage
+                )
+                _activeGoal.value = updatedGoal
+
+            } else {
+                // Fallback architecture logic handles structural non-calories variables (Weight, Distance, Workouts)
                 val currentValue = when (goal.type) {
-                    "Calories" -> repository.getTotalCaloriesThisWeek()
-                    "Distance" -> repository.getTotalDistanceThisWeek()
-                    "Workouts" -> repository.getTotalWorkoutsThisWeek()
+                    "Distance" -> _todayWorkouts.value?.sumOf { it.distanceKm ?: 0.0 } ?: 0.0
+                    "Workouts" -> _todayWorkouts.value?.size?.toDouble() ?: 0.0
                     "Weight" -> {
                         val profile = repository.getUserProfile()
-                        // Get starting weight (from when goal was set)
-                        val startWeight = goal.startWeight ?: profile?.weight?.toDouble() ?: 70.0
-                        val currentWeight = profile?.weight?.toDouble() ?: 70.0
-
-                        // Calculate progress based on weight lost
-                        val totalToLose = startWeight - goal.targetValue
-                        val lostSoFar = startWeight - currentWeight
-
-                        // FIXED: Return the progress value, not using return@launch
-                        if (totalToLose > 0) {
-                            lostSoFar / totalToLose
-                        } else {
-                            0.0
-                        }
+                        profile?.weight?.toDouble() ?: 70.0
                     }
                     else -> goal.currentValue
                 }
 
-                // Calculate progress percentage
-                val progress = if (goal.targetValue > 0 && goal.type != "Weight") {
-                    ((currentValue / goal.targetValue) * 100).toFloat().coerceIn(0f, 100f)
-                } else if (goal.type == "Weight") {
-                    // For weight, currentValue is already a percentage (0.0 to 1.0)
-                    (currentValue * 100).toFloat().coerceIn(0f, 100f)
-                } else {
-                    0f
+                val progress = when {
+                    goal.type == "Weight" -> {
+                        val profile = repository.getUserProfile()
+                        val startWeight = goal.startWeight ?: profile?.weight?.toDouble() ?: 70.0
+                        val currentWeight = profile?.weight?.toDouble() ?: 70.0
+                        val totalToLose = startWeight - goal.targetValue
+                        val lostSoFar = startWeight - currentWeight
+                        if (totalToLose > 0) ((lostSoFar / totalToLose) * 100).toFloat().coerceIn(0f, 100f) else 0f
+                    }
+                    goal.targetValue > 0 -> ((currentValue / goal.targetValue) * 100).toFloat().coerceIn(0f, 100f)
+                    else -> 0f
                 }
 
-                val updatedGoal = goal.copy(
-                    currentValue = if (goal.type == "Weight") {
-                        // Store the weight itself in currentValue
-                        repository.getUserProfile()?.weight?.toDouble() ?: 70.0
-                    } else {
-                        currentValue
-                    },
-                    progress = progress.toDouble()
-                )
-                _activeGoal.value = updatedGoal
-            } else {
-                _activeGoal.value = null
-            }
-        }
-    }
+                // FIXED: Handle goal completion checks for non-calories types as well
+                if (goal.type != "Weight" && currentValue >= goal.targetValue && goal.status != "completed") {
+                    repository.updateGoalStatus(goal.id, "completed")
+                    repository.unlockAchievement("Goal Achieved", "🏆")
+                } else if (goal.type == "Weight" && currentValue <= goal.targetValue && goal.status != "completed") {
+                    repository.updateGoalStatus(goal.id, "completed")
+                    repository.unlockAchievement("Goal Achieved", "🎯")
+                }
 
-    fun calculateGoalProgress(): Int {
-        val stats = _dailyStats.value ?: return 0
-        val goal = 800
-        return (stats.caloriesBurned.toFloat() / goal * 100).toInt()
+                _activeGoal.value = goal.copy(currentValue = currentValue, progress = progress.toDouble())
+            }
+        } else {
+            _activeGoal.value = null
+        }
     }
 }

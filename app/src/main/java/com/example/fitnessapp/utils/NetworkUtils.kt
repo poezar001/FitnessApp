@@ -442,6 +442,41 @@ object NetworkUtils {
     }
 
 
+    fun getUnreadNotificationCount(
+        context: Context,
+        userId: Int,
+        callback: (Int) -> Unit
+    ) {
+        if (!isNetworkAvailable(context)) {
+            callback(0)
+            return
+        }
+
+        // Target your exact PHP file name here
+        val url = "${BASE_URL}get_notification_count.php?user_id=$userId"
+
+        val request = StringRequest(
+            Request.Method.GET, url,
+            { response ->
+                try {
+                    val json = JSONObject(response)
+                    if (json.getBoolean("success")) {
+                        // Ensure this matches the JSON key your PHP script outputs (e.g., "unread_count" or "count")
+                        val count = json.getInt("unread_count")
+                        callback(count)
+                    } else {
+                        callback(0)
+                    }
+                } catch (e: Exception) {
+                    callback(0)
+                }
+            },
+            { error -> callback(0) }
+        )
+        requestQueue.add(request)
+    }
+
+
 }
 
 data class ApiGoal(

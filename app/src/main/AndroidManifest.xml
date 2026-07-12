@@ -90,6 +90,11 @@
             android:exported="false"
             android:parentActivityName=".activities.MainDashboardActivity" />
 
+        <activity
+            android:name=".activities.SubscriptionActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.MainDashboardActivity" />
+
     </application>
 
 </manifest>

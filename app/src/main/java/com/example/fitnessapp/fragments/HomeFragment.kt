@@ -40,11 +40,15 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(R.layout.fragment_home) {
         setupClickListeners()
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadData()
+    }
+
     private fun setupRecyclerView() {
         binding.todayWorkoutsRecycler.layoutManager = LinearLayoutManager(requireContext())
 
         workoutAdapter = WorkoutAdapter(emptyList()) { workout ->
-            // Navigate to WorkoutDetailActivity
             val intent = Intent(requireContext(), WorkoutDetailActivity::class.java)
             intent.putExtra("workout_data", workout)
             startActivity(intent)
@@ -57,9 +61,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(R.layout.fragment_home) {
             startActivity(Intent(requireContext(), AddWorkoutActivity::class.java))
         }
 
-        binding.btnStartRunning.setOnClickListener {
-            showToast("Starting running tracking...")
-        }
+
 
         binding.btnSetGoal.setOnClickListener {
             startActivity(Intent(requireContext(), GoalSettingActivity::class.java))
@@ -69,43 +71,60 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(R.layout.fragment_home) {
     override fun setupObservers() {
         viewModel.activeGoal.observe(viewLifecycleOwner) { goal ->
             if (goal != null) {
+                val progress = goal.progress.toInt()
+                binding.goalProgressText.text = "$progress% completed today"
+
+                val activeChartColor = when(goal.type) {
+                    "Weight" -> Color.parseColor("#3498db")
+                    "Calories" -> Color.parseColor("#2ecc71") // Energetic Green
+                    "Distance" -> Color.parseColor("#e67e22")
+                    else -> Color.parseColor("#9b59b6")
+                }
+
                 when (goal.type) {
                     "Weight" -> {
+                        binding.tvGoalHeader.text = "Overall Weight Goal"
                         val currentWeight = goal.currentValue
                         val targetWeight = goal.targetValue
-                        val progress = goal.progress.toInt()
                         val toLose = (currentWeight - targetWeight).coerceAtLeast(0.0)
+                        binding.remainingText.text = if (toLose > 0) String.format("%.1f kg left to target!", toLose) else "🎉 Goal achieved!"
+                    }
+                    "Calories" -> {
+                        // FIXED: Adjusted header to match contextual tracking balance across days
+                        binding.tvGoalHeader.text = "Active Target Balance"
+                        val remainingCalories = goal.currentValue
 
-                        binding.goalProgressText.text = "$progress% completed"
-                        binding.remainingText.text = if (toLose > 0) {
-                            String.format("%.1f kg to go!", toLose)
+                        binding.remainingText.text = if (remainingCalories > 0) {
+                            String.format("%.0f kcal remaining to go!", remainingCalories)
                         } else {
-                            "🎉 Goal achieved!"
+                            "🎉 Target cleared! Awesome job!"
                         }
-
-                        ChartUtils.setupPieChart(
-                            binding.progressChart,
-                            progress.toFloat(),
-                            Color.parseColor("#00FF00")
-                        )
                     }
                     else -> {
-                        // Handle other goal types
-                        val progress = goal.progress.toInt()
+                        binding.tvGoalHeader.text = "Today's ${goal.type} Goal"
                         val remaining = (goal.targetValue - goal.currentValue).coerceAtLeast(0.0)
-                        binding.goalProgressText.text = "$progress% completed"
-                        binding.remainingText.text = String.format("%.1f %s to go!", remaining, goal.unit)
-                        ChartUtils.setupPieChart(
-                            binding.progressChart,
-                            progress.toFloat(),
-                            Color.parseColor("#00FF00")
-                        )
+                        val unitLabel = goal.unit ?: when(goal.type) {
+                            "Distance" -> "km"
+                            "Workouts" -> "workouts"
+                            else -> ""
+                        }
+                        binding.remainingText.text = if (remaining > 0) String.format("%.1f %s to go!", remaining, unitLabel) else "🎉 Today's target reached!"
                     }
                 }
+
+                ChartUtils.setupPieChart(
+                    binding.progressChart,
+                    progress.toFloat(),
+                    activeChartColor
+                )
+            } else {
+                binding.tvGoalHeader.text = "Goal Tracker"
+                binding.goalProgressText.text = "No active goal"
+                binding.remainingText.text = "Tap 'Set Goal' to start tracking!"
+                ChartUtils.setupPieChart(binding.progressChart, 0f, Color.parseColor("#333333"))
             }
         }
 
-        // ====== DAILY STATS OBSERVER ======
         viewModel.dailyStats.observe(viewLifecycleOwner) { stats ->
             stats?.let {
                 binding.caloriesValue.text = it.caloriesBurned.toString()
@@ -114,14 +133,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(R.layout.fragment_home) {
             }
         }
 
-        // ====== TODAY WORKOUTS OBSERVER ======
         viewModel.todayWorkouts.observe(viewLifecycleOwner) { workouts ->
             workouts?.let {
                 workoutAdapter.updateData(it)
             }
         }
 
-        // ====== USERNAME OBSERVER ======
         viewModel.username.observe(viewLifecycleOwner) { username ->
             username?.let {
                 binding.welcomeText.text = "Good ${getTimeOfDay()}, $username!"

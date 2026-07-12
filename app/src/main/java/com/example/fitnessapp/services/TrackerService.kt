@@ -26,10 +26,14 @@ class TrackerService : Service(), SensorEventListener {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
 
+    // Baselines for real calculations
+    private var lastLocation: Location? = null
+    private var startStepBaseline = -1 // Offset value for boot steps counter
+
     private var stepCount = 0
-    private var distanceTraveled = 0.0
+    private var distanceTraveled = 0.0 // in km
     private var caloriesBurned = 0.0
-    private var elapsedTime = 0L
+    private var startTimeMillis = 0L
     private var isTracking = false
     private var activityType = "Running"
 
@@ -65,8 +69,15 @@ class TrackerService : Service(), SensorEventListener {
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun startTracking() {
+        if (isTracking) return // Prevent multiple instantiations
         isTracking = true
-        elapsedTime = System.currentTimeMillis()
+        startTimeMillis = System.currentTimeMillis()
+        lastLocation = null
+        startStepBaseline = -1
+        stepCount = 0
+        distanceTraveled = 0.0
+        caloriesBurned = 0.0
+
         startForeground(NOTIFICATION_ID, createNotification("Tracking $activityType..."))
         registerSensors()
         requestLocationUpdates()
@@ -91,21 +102,21 @@ class TrackerService : Service(), SensorEventListener {
                 sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
             }
         } catch (e: Exception) {
-            // Handle sensor error
+            e.printStackTrace()
         }
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun requestLocationUpdates() {
         try {
-            // Fixed: Use Float for minDistance (1.0f)
             val locationRequest = LocationRequest.Builder(
                 Priority.PRIORITY_HIGH_ACCURACY,
-                1000L  // Interval in milliseconds
-            ).setMinUpdateDistanceMeters(1.0f).build()  // ← Use 'f' for Float
+                2000L // 2-second checking loops are safer for battery consumption
+            ).setMinUpdateDistanceMeters(1.0f).build()
 
             locationCallback = object : LocationCallback() {
                 override fun onLocationResult(locationResult: LocationResult) {
+                    if (!isTracking) return
                     for (location in locationResult.locations) {
                         updateTrackingData(location)
                     }
@@ -118,40 +129,47 @@ class TrackerService : Service(), SensorEventListener {
                 Looper.getMainLooper()
             )
         } catch (e: Exception) {
-            // Handle location error
             e.printStackTrace()
         }
     }
 
     private fun updateTrackingData(location: Location) {
         try {
-            // Update distance
-            distanceTraveled += location.speed * 0.001 // Convert to km
+            // FIX 1: Calculate actual distance based on GPS coordinate deltas
+            if (lastLocation != null) {
+                val distanceMeters = lastLocation!!.distanceTo(location)
+                if (distanceMeters > 1.0) { // Discard micro jittering adjustments when static
+                    distanceTraveled += (distanceMeters / 1000.0) // Accumulate clean KM values
+                }
+            }
+            lastLocation = location
 
-            // Calculate calories (simplified)
-            val weight = 70.0 // Get from user profile
-            val durationHours = (System.currentTimeMillis() - elapsedTime) / 3600000.0
+            // FIX 2: Calculate total calories cleanly from total time context elapsed
+            val weight = 70.0 // Replace later with profile reference if needed
+            val durationMinutes = (System.currentTimeMillis() - startTimeMillis) / 60000.0
+
             val met = when (activityType) {
                 "Running" -> 9.8
                 "Cycling" -> 7.5
                 "Walking" -> 3.5
                 else -> 5.0
             }
-            caloriesBurned = met * 3.5 * weight * durationHours / 200
+            // MET Formula: (MET * 3.5 * weight / 200) * total_minutes
+            caloriesBurned = (met * 3.5 * weight / 200.0) * durationMinutes
 
-            // Send update to Activity
             sendUpdateBroadcast()
         } catch (e: Exception) {
-            // Handle update error
+            e.printStackTrace()
         }
     }
 
     private fun sendUpdateBroadcast() {
+        if (!isTracking) return
         try {
             val intent = Intent(ACTION_UPDATE)
             intent.putExtra("distance", distanceTraveled)
             intent.putExtra("calories", caloriesBurned.toInt())
-            intent.putExtra("duration", ((System.currentTimeMillis() - elapsedTime) / 60000).toInt())
+            intent.putExtra("duration", ((System.currentTimeMillis() - startTimeMillis) / 60000).toInt())
             intent.putExtra("steps", stepCount)
             sendBroadcast(intent)
         } catch (e: Exception) {
@@ -163,7 +181,14 @@ class TrackerService : Service(), SensorEventListener {
         try {
             event?.let {
                 if (it.sensor.type == Sensor.TYPE_STEP_COUNTER) {
-                    stepCount = it.values[0].toInt()
+                    val totalDeviceSteps = it.values[0].toInt()
+
+                    // FIX 3: Deduct step counter baseline context
+                    if (startStepBaseline < 0) {
+                        startStepBaseline = totalDeviceSteps
+                    }
+
+                    stepCount = totalDeviceSteps - startStepBaseline
                     sendUpdateBroadcast()
                 }
             }

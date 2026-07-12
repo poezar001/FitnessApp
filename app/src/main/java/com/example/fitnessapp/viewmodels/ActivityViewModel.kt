@@ -95,7 +95,8 @@ class ActivityViewModel(private val repository: MainRepository) : ViewModel() {
                         goal.type,
                         targetCalories,
                         goal.unit,
-                        userId
+                        userId,
+                        workout.activityType  // Pass activity type
                     )
                 } else {
                     notificationHelper.sendGoalProgressNotification(
@@ -104,7 +105,8 @@ class ActivityViewModel(private val repository: MainRepository) : ViewModel() {
                         remaining,
                         goal.unit,
                         workout.caloriesBurned,
-                        userId
+                        userId,
+                        workout.activityType  // Pass activity type
                     )
                 }
             }

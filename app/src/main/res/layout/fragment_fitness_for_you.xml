@@ -29,7 +29,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🎉 Anniversary"
+                    android:text="✨ Milestone Celebration"
                     android:textSize="28sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF" />
@@ -37,7 +37,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Celebrate your fitness journey"
+                    android:text="Honoring your dedication and progress"
                     android:textSize="14sp"
                     android:textColor="#E0E0E0" />
             </LinearLayout>
@@ -48,7 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Trainer Tips"
+            android:text="Coach Insights"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />
@@ -57,7 +57,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Stay motivated with expert advice from our trainers"
+            android:text="Keep up the momentum with professional guidance"
             android:textSize="14sp"
             android:textColor="@color/text_secondary" />
 
@@ -91,7 +91,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Fitness+ Trainers"
+            android:text="Our Certified Instructors"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />

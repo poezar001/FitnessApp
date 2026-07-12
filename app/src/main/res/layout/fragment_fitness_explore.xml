@@ -16,7 +16,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Free Monthly Sampler"
+            android:text="Featured Monthly Showcase"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />
@@ -25,7 +25,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Try these episodes one time—no trial or subscription required."
+            android:text="Preview these select sessions instantly—no commitment or account required."
             android:textSize="14sp"
             android:textColor="@color/text_secondary" />
 
@@ -68,7 +68,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="10min · Chill Vibes"
+                        android:text="10min · Relaxing Routine"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF" />
@@ -77,7 +77,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Morning Yoga Flow"
+                        android:text="Early Morning Yoga Sequence"
                         android:textSize="14sp"
                         android:textColor="#CCFFFFFF" />
 
@@ -90,7 +90,7 @@
                         android:paddingEnd="16dp"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="▶ Watch Free"
+                        android:text="▶ Start Preview"
                         android:textSize="12sp"
                         android:textColor="#000000"
                         android:textStyle="bold"
@@ -100,12 +100,13 @@
 
             </FrameLayout>
         </androidx.cardview.widget.CardView>
+
         <!-- Activity Types -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Activity Types"
+            android:text="Workout Categories"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />
@@ -470,7 +471,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Top Programs"
+            android:text="Trending Content"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />
@@ -478,7 +479,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Most popular picks right now"
+            android:text="Highly recommended series available now"
             android:textSize="14sp"
             android:textColor="@color/text_secondary" />
 

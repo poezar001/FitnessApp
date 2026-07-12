@@ -196,6 +196,17 @@ class MainRepository(private val context: Context) {
     suspend fun unlockAchievement(name: String, icon: String) {
         android.util.Log.d("MainRepository", "Unlock achievement: $name with icon $icon")
     }
+// Add this method inside MainRepository.kt
+
+    suspend fun getUnreadNotificationCount(): Int {
+        return suspendCancellableCoroutine { continuation ->
+            // Assuming NetworkUtils handles your API/Database layer similarly to your goals
+            NetworkUtils.getUnreadNotificationCount(context, getUserId()) { count ->
+                continuation.resume(count)
+            }
+        }
+    }
+
 
     // ==================== HELPER METHODS ====================
 

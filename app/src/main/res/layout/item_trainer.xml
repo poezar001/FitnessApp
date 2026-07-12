@@ -5,12 +5,15 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="8dp">
+    android:padding="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="@drawable/bg_trainer_default">
 
     <androidx.cardview.widget.CardView
-        android:layout_width="80dp"
-        android:layout_height="90dp"
-        app:cardCornerRadius="40dp"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        app:cardCornerRadius="35dp"
         app:cardElevation="4dp"
         app:cardBackgroundColor="@color/surface">
 
@@ -28,49 +31,64 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:text="Dice"
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:textStyle="bold"
-        android:textColor="@color/text_primary" />
+        android:textColor="@color/text_primary"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/tvTrainerRole"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Yoga Expert"
-        android:textSize="10sp"
-        android:textColor="@color/text_secondary" />
+        android:textSize="9sp"
+        android:textColor="@color/text_secondary"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
-    <!-- Quote with better visibility -->
+    <!-- Quote - Visible only in For You page (via visibility control) -->
     <TextView
         android:id="@+id/tvTrainerQuote"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:text="Find your peace"
-        android:textSize="9sp"
+        android:textSize="8sp"
         android:textColor="@color/primary"
         android:maxLines="1"
         android:ellipsize="end"
         android:background="@color/surface_light"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
         android:paddingTop="2dp"
         android:paddingBottom="2dp"
-        android:gravity="center" />
+        android:gravity="center"
+        android:visibility="gone" />
 
-    <!-- Experience Text - Now visible with better styling -->
+    <!-- Experience - Visible only in For You page (via visibility control) -->
     <TextView
         android:id="@+id/tvTrainerExperience"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:text="10+ years"
-        android:textSize="9sp"
+        android:textSize="8sp"
         android:textColor="@color/text_hint"
         android:background="@color/surface"
         android:paddingStart="6dp"
         android:paddingEnd="6dp"
         android:paddingTop="1dp"
-        android:paddingBottom="1dp" />
+        android:paddingBottom="1dp"
+        android:visibility="gone" />
+
+    <!-- Selection Indicator - Visible only in Plans page -->
+    <View
+        android:id="@+id/selectionIndicator"
+        android:layout_width="20dp"
+        android:layout_height="3dp"
+        android:layout_marginTop="4dp"
+        android:background="@color/primary"
+        android:visibility="gone" />
 
 </LinearLayout>

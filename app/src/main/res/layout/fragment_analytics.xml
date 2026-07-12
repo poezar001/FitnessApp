@@ -17,13 +17,15 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- BMI Section -->
-            <androidx.cardview.widget.CardView
+            <!-- BMI Section (BORDER RETAINED) -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="16dp"
-                app:cardBackgroundColor="@color/surface">
+                app:cardBackgroundColor="@color/surface"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/primary">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -92,7 +94,7 @@
                             android:textColor="@color/success" />
                     </LinearLayout>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Weekly Workout Graph -->
             <TextView
@@ -218,7 +220,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Personalized Insights -->
+            <!-- Personalized Insights (BORDER RETAINED) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -227,12 +229,15 @@
                 android:textStyle="bold"
                 android:textColor="@color/text_primary" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="16dp"
-                app:cardBackgroundColor="@color/surface">
+                app:cardBackgroundColor="@color/surface"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/primary">
 
                 <LinearLayout
                     android:id="@+id/insightsContainer"
@@ -240,7 +245,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp" />
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </ScrollView>

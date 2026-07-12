@@ -60,6 +60,7 @@ class GoalTrackingService : JobIntentService() {
                     // Send progress update if significant change
                     else if (progress - previousProgress >= 5) {
                         val remaining = (goal.targetValue - currentValue).coerceAtLeast(0.0)
+                        // FIXED: Removed workout.durationMinutes - not available here
                         notificationHelper.sendGoalProgressNotification(
                             goal.type,
                             progress,

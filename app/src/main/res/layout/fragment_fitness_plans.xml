@@ -23,7 +23,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Made For You"
+                android:text="Made Plan For You"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary" />
@@ -32,11 +32,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Pre-built plans to keep your momentum"
+                android:text="Pre-built plans to keep your fitness journey.."
                 android:textSize="14sp"
                 android:textColor="@color/text_secondary" />
 
-            <androidx.cardview.widget.CardView
+            <!-- Get Started Card with Border -->
+            <!-- Changed to MaterialCardView to support stroke/border attributes -->
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/getStartedCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -44,6 +46,8 @@
                 app:cardCornerRadius="20dp"
                 app:cardBackgroundColor="@color/surface"
                 app:cardElevation="4dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/primary"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground">
@@ -64,7 +68,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/plan_get_started"
+                            android:text="Get Started"
                             android:textSize="20sp"
                             android:textStyle="bold"
                             android:textColor="@color/primary" />
@@ -73,7 +77,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="HIIT, Strength, and Yoga"
+                            android:text="Strength, and Yoga"
                             android:textSize="14sp"
                             android:textColor="@color/text_primary" />
 
@@ -81,7 +85,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="3 DAYS \u2022 10MIN/DAY"
+                            android:text="3 DAYS • 10MIN/DAY"
                             android:textSize="12sp"
                             android:textColor="@color/text_hint" />
                     </LinearLayout>
@@ -90,7 +94,7 @@
                         android:id="@+id/planPreview"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/preview_arrow"
+                        android:text="Preview →"
                         android:textSize="14sp"
                         android:textColor="@color/primary"
                         android:textStyle="bold"
@@ -98,14 +102,14 @@
                         android:focusable="true"
                         android:padding="8dp" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Build Your Own Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
-                android:text="Build Your Own"
+                android:text="Build Your Own Plan"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary" />
@@ -114,11 +118,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Choose activities and set your schedule"
+                android:text="Choose activities and set your own schedule"
                 android:textSize="14sp"
                 android:textColor="@color/text_secondary" />
 
-            <androidx.cardview.widget.CardView
+            <!-- Build Own Plan Card with Border -->
+            <!-- Changed to MaterialCardView to support stroke/border attributes -->
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/buildOwnPlanCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -126,6 +132,8 @@
                 app:cardCornerRadius="20dp"
                 app:cardBackgroundColor="@color/surface"
                 app:cardElevation="4dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/primary"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground">
@@ -146,7 +154,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/plan_custom"
+                            android:text="Custom Plan"
                             android:textSize="20sp"
                             android:textStyle="bold"
                             android:textColor="@color/text_primary" />
@@ -155,7 +163,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Your activities, workout length, days of t..."
+                            android:text="Set your activities, workout length, days of weeks, time.. "
                             android:textSize="14sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
@@ -163,12 +171,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/create_arrow"
+                        android:text="Create →"
                         android:textSize="14sp"
                         android:textColor="@color/primary"
                         android:textStyle="bold" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
         <!-- Schedule Layout (Made For You) -->
@@ -179,7 +187,7 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- Back Button with better design -->
+            <!-- Back Button -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -191,7 +199,7 @@
                     android:id="@+id/backToPlans"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/label_back"
+                    android:text="← Back"
                     android:textSize="16sp"
                     android:textColor="@color/primary"
                     android:textStyle="bold"
@@ -204,21 +212,12 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Schedule"
+                    android:text="Schedule For You"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:gravity="center" />
             </LinearLayout>
-
-            <TextView
-                android:id="@+id/scheduleTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Get Started"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary" />
 
             <TextView
                 android:id="@+id/scheduleSubtitle"
@@ -229,7 +228,7 @@
                 android:textSize="14sp"
                 android:textColor="@color/text_secondary" />
 
-            <!-- Tabs - Better Design -->
+            <!-- Tabs -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -278,56 +277,126 @@
                     android:focusable="true" />
             </LinearLayout>
 
-            <!-- Weekly Schedule -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Weekly Schedule"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Edit your weekly structure below. Workouts can be completed later if missed."
-                android:textSize="12sp"
-                android:textColor="@color/text_secondary" />
-
-            <androidx.cardview.widget.CardView
+            <!-- Schedule Content -->
+            <LinearLayout
+                android:id="@+id/scheduleContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardCornerRadius="16dp"
-                app:cardBackgroundColor="@color/surface"
-                app:cardElevation="2dp">
+                android:orientation="vertical"
+                android:visibility="visible">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/scheduleRecycler"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="Weekly Schedule"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Edit your weekly structure below. Workouts can be completed later if missed."
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary" />
+
+                <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="8dp" />
-            </androidx.cardview.widget.CardView>
+                    android:layout_marginTop="12dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardElevation="2dp">
 
-            <TextView
-                android:id="@+id/addDayButton"
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/scheduleRecycler"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp" />
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:id="@+id/addDayButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:text="+ Add a Day"
+                    android:textSize="14sp"
+                    android:textColor="@color/primary"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_add_day"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- ===== TRAINERS CONTENT ===== -->
+            <LinearLayout
+                android:id="@+id/trainersContent"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:gravity="center"
-                android:text="+ Add a Day"
-                android:textSize="14sp"
-                android:textColor="@color/primary"
-                android:textStyle="bold"
-                android:background="@drawable/bg_add_day"
-                android:clickable="true"
-                android:focusable="true" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Preferred Trainers"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your plan will feature selected trainers more often."
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/trainersRecycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp" />
+            </LinearLayout>
+
+            <!-- ===== MUSIC CONTENT ===== -->
+            <LinearLayout
+                android:id="@+id/musicContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Preferred Music"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your plan will feature selected music more often."
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/musicRecycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp" />
+            </LinearLayout>
 
             <!-- Free Trial Button -->
             <Button
+                android:id="@+id/tryFreeButton"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="24dp"
@@ -360,7 +429,7 @@
                     android:id="@+id/backToPlansBuild"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/label_back"
+                    android:text="← Back"
                     android:textSize="16sp"
                     android:textColor="@color/primary"
                     android:textStyle="bold"
@@ -373,20 +442,12 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Build Your Plan"
+                    android:text="Create Your Plan"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:gravity="center" />
             </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Build Your Plan"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary" />
 
             <!-- Weekly Schedule Days -->
             <TextView
@@ -446,7 +507,8 @@
                     android:text="W"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="@color/text_primary" android:background="@drawable/bg_day_default"
+                    android:textColor="@color/text_primary"
+                    android:background="@drawable/bg_day_default"
                     android:layout_margin="3dp"
                     android:clickable="true"
                     android:focusable="true" />
@@ -513,7 +575,7 @@
 
             </LinearLayout>
 
-            <!-- Total Time Per Day & Length of Plan - Side by Side -->
+            <!-- Total Time Per Day & Length of Plan -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -598,26 +660,13 @@
                 app:cardBackgroundColor="@color/surface"
                 app:cardElevation="2dp">
 
-                <HorizontalScrollView
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/activityTypesRecycler"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scrollbars="none"
-                    android:padding="12dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/activityTypesRecycler"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-                    </LinearLayout>
-                </HorizontalScrollView>
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
             </androidx.cardview.widget.CardView>
 
             <!-- Selected count -->
@@ -632,6 +681,7 @@
 
             <!-- Free Trial Button -->
             <Button
+                android:id="@+id/tryFreeButtonBuild"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="24dp"
@@ -643,6 +693,5 @@
                 app:cornerRadius="16dp" />
 
         </LinearLayout>
-
     </LinearLayout>
 </ScrollView>

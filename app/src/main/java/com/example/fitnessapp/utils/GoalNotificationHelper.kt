@@ -48,11 +48,11 @@ class GoalNotificationHelper(private val context: Context) {
         remaining: Double,
         unit: String,
         caloriesBurned: Int = 0,
-        userId: Int = 0
+        userId: Int = 0,
+        activityType: String = ""
     ) {
         val intent = Intent(context, MainDashboardActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("open_notifications", true)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -62,16 +62,23 @@ class GoalNotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val message = if (caloriesBurned > 0) {
-            "🔥 You burned $caloriesBurned kcal today! ${getMotivationalMessage(progress)}"
-        } else {
-            "${getMotivationalMessage(progress)} You're $progress% to your $goalType goal!"
+        val activityEmoji = getActivityEmoji(activityType)
+
+        // Build message
+        val message = when {
+            progress >= 100 -> "🎉 Amazing! You reached your $goalType goal!"
+            caloriesBurned > 0 && progress >= 75 -> "$activityEmoji You burned $caloriesBurned kcal! Only $remaining $unit to go!"
+            caloriesBurned > 0 && progress >= 50 -> "$activityEmoji Great job! $caloriesBurned kcal burned, $remaining $unit to go!"
+            progress >= 75 -> "💪 Almost there! Only $remaining $unit to go!"
+            progress >= 50 -> "🌟 Halfway there! $remaining $unit to go!"
+            else -> "💪 Keep pushing! You're $progress% to your $goalType goal ($remaining $unit left)!"
         }
 
         val title = when {
             progress >= 100 -> "🎉 Goal Achieved!"
             progress >= 75 -> "💪 Almost There!"
             progress >= 50 -> "🌟 Great Progress!"
+            progress >= 25 -> "🚀 Good Start!"
             else -> "🎯 Goal Progress"
         }
 
@@ -85,7 +92,7 @@ class GoalNotificationHelper(private val context: Context) {
             .build()
 
         val manager = context.getSystemService(NotificationManager::class.java)
-        manager?.notify(NOTIFICATION_ID, notification)
+        manager?.notify(NOTIFICATION_ID + progress, notification)
 
         if (userId > 0) {
             saveNotificationToDatabase(userId, title, message, "goal_progress")
@@ -96,11 +103,11 @@ class GoalNotificationHelper(private val context: Context) {
         goalType: String,
         targetValue: Double,
         unit: String,
-        userId: Int = 0
+        userId: Int = 0,
+        activityType: String = ""
     ) {
         val intent = Intent(context, MainDashboardActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("open_notifications", true)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -110,8 +117,9 @@ class GoalNotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val activityEmoji = getActivityEmoji(activityType)
         val title = "🎉 Goal Achieved!"
-        val message = "Congratulations! You reached your $goalType goal of $targetValue $unit! 🏆"
+        val message = "$activityEmoji Congratulations! You reached your $goalType goal of $targetValue $unit! 🏆"
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
@@ -123,14 +131,13 @@ class GoalNotificationHelper(private val context: Context) {
             .build()
 
         val manager = context.getSystemService(NotificationManager::class.java)
-        manager?.notify(NOTIFICATION_ID + 1, notification)
+        manager?.notify(NOTIFICATION_ID + 999, notification)
 
         if (userId > 0) {
             saveNotificationToDatabase(userId, title, message, "goal_achieved")
         }
     }
 
-    // ====== ADD THIS MISSING FUNCTION ======
     fun sendMilestoneNotification(
         goalType: String,
         milestone: Int,
@@ -138,7 +145,6 @@ class GoalNotificationHelper(private val context: Context) {
     ) {
         val intent = Intent(context, MainDashboardActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("open_notifications", true)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -168,6 +174,56 @@ class GoalNotificationHelper(private val context: Context) {
         }
     }
 
+    // NEW: Custom notification for no goals
+    fun sendCustomNotification(
+        title: String,
+        message: String,
+        userId: Int = 0
+    ) {
+        val intent = Intent(context, MainDashboardActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_fitness_plus)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager?.notify(NOTIFICATION_ID + 1000, notification)
+
+        if (userId > 0) {
+            saveNotificationToDatabase(userId, title, message, "workout_complete")
+        }
+    }
+
+    private fun getActivityEmoji(activityType: String): String {
+        return when (activityType) {
+            "Running" -> "🏃"
+            "Cycling" -> "🚲"
+            "Walking" -> "🚶"
+            "Weightlifting" -> "💪"
+            "Yoga" -> "🧘"
+            "Meditation" -> "🧠"
+            "Strength" -> "🏋️"
+            "Pilates" -> "🧘‍♀️"
+            "Kickboxing" -> "🥊"
+            "Treadmill" -> "🏃‍♂️"
+            else -> "💪"
+        }
+    }
+
     private fun saveNotificationToDatabase(userId: Int, title: String, message: String, type: String) {
         try {
             val url = "http://10.0.2.2/fitness_app/save_notification.php"
@@ -183,10 +239,10 @@ class GoalNotificationHelper(private val context: Context) {
                 url,
                 jsonBody,
                 { response ->
-                    android.util.Log.d("GoalNotificationHelper", "Notification saved: $response")
+                    android.util.Log.d("NotificationHelper", "Notification saved: $response")
                 },
                 { error ->
-                    android.util.Log.e("GoalNotificationHelper", "Failed to save: ${error.message}")
+                    android.util.Log.e("NotificationHelper", "Failed to save: ${error.message}")
                 }
             ) {
                 override fun getBodyContentType(): String = "application/json"
@@ -195,7 +251,7 @@ class GoalNotificationHelper(private val context: Context) {
             Volley.newRequestQueue(context).add(request)
 
         } catch (e: Exception) {
-            android.util.Log.e("GoalNotificationHelper", "Error: ${e.message}")
+            android.util.Log.e("NotificationHelper", "Error: ${e.message}")
         }
     }
 

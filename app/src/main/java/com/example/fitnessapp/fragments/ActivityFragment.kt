@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fitnessapp.R
 import com.example.fitnessapp.activities.AddWorkoutActivity
-import com.example.fitnessapp.activities.WorkoutDetailActivity
 import com.example.fitnessapp.base.BaseFragment
 import com.example.fitnessapp.adapters.WorkoutAdapter
 import com.example.fitnessapp.databinding.FragmentActivityBinding
@@ -36,8 +35,7 @@ class ActivityFragment : BaseFragment<FragmentActivityBinding>(R.layout.fragment
     private fun setupRecyclerView() {
         binding.workoutsRecycler.layoutManager = LinearLayoutManager(requireContext())
         workoutAdapter = WorkoutAdapter(emptyList()) { workout ->
-            // Navigate to WorkoutDetailActivity
-            val intent = Intent(requireContext(), WorkoutDetailActivity::class.java)
+            val intent = Intent(requireContext(), com.example.fitnessapp.activities.WorkoutDetailActivity::class.java)
             intent.putExtra("workout_data", workout)
             startActivity(intent)
         }
@@ -63,10 +61,6 @@ class ActivityFragment : BaseFragment<FragmentActivityBinding>(R.layout.fragment
         binding.chipYoga.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) viewModel.setType("Yoga")
         }
-        // Add new chips
-        binding.chipKickboxing.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) viewModel.setType("Kickboxing")
-        }
         binding.chipMeditation.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) viewModel.setType("Meditation")
         }
@@ -75,6 +69,9 @@ class ActivityFragment : BaseFragment<FragmentActivityBinding>(R.layout.fragment
         }
         binding.chipPilates.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) viewModel.setType("Pilates")
+        }
+        binding.chipKickboxing.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) viewModel.setType("Kickboxing")
         }
         binding.chipTreadmill.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) viewModel.setType("Treadmill")
@@ -117,11 +114,20 @@ class ActivityFragment : BaseFragment<FragmentActivityBinding>(R.layout.fragment
         }
 
         viewModel.workoutSummary.observe(viewLifecycleOwner) { summary ->
-            // Fix: Display calories correctly
             binding.totalWorkoutsValue.text = summary.totalWorkouts.toString()
             binding.totalCaloriesValue.text = summary.totalCalories.toString()
-            val hours = summary.totalDuration / 60
-            binding.totalHoursValue.text = hours.toString()
+
+            // ✅ FIXED: Display total time correctly
+            val totalMinutes = summary.totalDuration
+            val hours = totalMinutes / 60
+            val minutes = totalMinutes % 60
+
+            val timeDisplay = when {
+                hours > 0 && minutes > 0 -> "$hours h $minutes min"
+                hours > 0 -> "$hours h"
+                else -> "${minutes}m"
+            }
+            binding.totalHoursValue.text = timeDisplay
         }
     }
 

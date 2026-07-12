@@ -29,4 +29,5 @@
     <!-- Card Background -->
     <color name="card_background">#FFFFFF</color>
     <color name="bottom_nav_color">#00C853</color>
+
 </resources>

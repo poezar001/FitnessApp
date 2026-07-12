@@ -5,5 +5,6 @@ data class Trainer(
     val role: String,
     val imageResId: Int,
     val quote: String = "",
-    val experience: String = ""
+    val experience: String = "",
+    val isSelected: Boolean = false
 )

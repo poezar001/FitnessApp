@@ -73,6 +73,7 @@
                             app:layout_constraintBottom_toBottomOf="parent">
 
                             <TextView
+                                android:id="@+id/tvGoalHeader"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Today's Goal"
@@ -101,7 +102,6 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- REMOVED Goal Progress Section - No longer needed -->
 
             <!-- Daily Summary Cards -->
             <LinearLayout
@@ -251,20 +251,7 @@
                     android:layout_height="54dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:text="+ ADD WORKOUT"
-                    android:textColor="@color/primary"
-                    android:textSize="11sp"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    app:strokeColor="@color/primary" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnStartRunning"
-                    android:layout_width="0dp"
-                    android:layout_height="54dp"
-                    android:layout_marginStart="3dp"
-                    android:layout_marginEnd="3dp"
-                    android:layout_weight="1"
-                    android:text="START RUN"
+                    android:text="+ADD WORKOUT"
                     android:textColor="@color/primary"
                     android:textSize="11sp"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"

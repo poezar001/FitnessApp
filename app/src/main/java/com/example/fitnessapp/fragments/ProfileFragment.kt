@@ -2,6 +2,7 @@ package com.example.fitnessapp.fragments
 
 import android.content.Intent
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fitnessapp.R
 import com.example.fitnessapp.activities.LoginActivity
 import com.example.fitnessapp.activities.SettingsActivity
@@ -12,7 +13,6 @@ import com.example.fitnessapp.repository.MainRepository
 import com.example.fitnessapp.utils.BMICalculator
 import com.example.fitnessapp.utils.DateUtils
 import com.example.fitnessapp.viewmodels.ProfileViewModel
-import java.util.Collections.emptyList
 
 class ProfileFragment : BaseFragment<FragmentProfileBinding>(R.layout.fragment_profile) {
 
@@ -23,6 +23,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding>(R.layout.fragment_p
         val repository = MainRepository(requireContext())
         viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
                 return ProfileViewModel(repository) as T
             }
         }).get(ProfileViewModel::class.java)
@@ -33,7 +34,16 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding>(R.layout.fragment_p
         setupClickListeners()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Ensure data refreshes when returning to this tab screen
+        loadData()
+    }
+
     private fun setupRecyclerView() {
+        // Essential layout manager assignment so the items render structurally
+        binding.achievementsRecycler.layoutManager = LinearLayoutManager(requireContext())
+
         achievementAdapter = AchievementAdapter(emptyList())
         binding.achievementsRecycler.adapter = achievementAdapter
     }
@@ -64,7 +74,13 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding>(R.layout.fragment_p
                 binding.profileAge.text = calculateAge(profile.birthday).toString()
                 binding.profileWeight.text = "${profile.weight} kg"
                 binding.profileHeight.text = "${profile.height} cm"
-                binding.profileFitnessLevel.text = profile.activityLevel.displayName
+
+                // Maps activity level cleanly using name fallback if displayName isn't configured
+                binding.profileFitnessLevel.text = try {
+                    profile.activityLevel.displayName
+                } catch (e: Exception) {
+                    profile.activityLevel.name.replace("_", " ")
+                }
 
                 val bmi = BMICalculator.calculateBMI(profile.weight.toDouble(), profile.height.toDouble())
                 binding.profileFitnessLevel.append(" (BMI: ${String.format("%.1f", bmi)})")
@@ -72,7 +88,9 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding>(R.layout.fragment_p
         }
 
         viewModel.achievements.observe(viewLifecycleOwner) { achievements ->
-            achievementAdapter.updateData(achievements)
+            achievements?.let {
+                achievementAdapter.updateData(it)
+            }
         }
     }
 

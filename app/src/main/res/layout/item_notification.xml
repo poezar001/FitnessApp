@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="12dp">
 
         <!-- Unread Indicator -->
         <View
@@ -55,5 +55,19 @@
                 android:textSize="12sp"
                 android:textColor="@color/text_hint" />
         </LinearLayout>
+
+        <!-- Delete Button -->
+        <ImageView
+            android:id="@+id/ivDelete"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_delete"
+            android:padding="6dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_gravity="center_vertical"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            app:tint="@color/error" />
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>

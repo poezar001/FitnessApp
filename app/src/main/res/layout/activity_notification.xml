@@ -15,6 +15,16 @@
         app:title="Notifications"
         app:titleTextColor="@color/text_primary" />
 
+    <!-- Notification Count -->
+    <TextView
+        android:id="@+id/tvNotificationCount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="0 notifications"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary" />
+
     <TextView
         android:id="@+id/emptyStateText"
         android:layout_width="wrap_content"

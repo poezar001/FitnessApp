@@ -59,7 +59,7 @@ class AddWorkoutActivity : AppCompatActivity() {
                 trackedCalories = intent.getIntExtra("calories", 0)
                 trackedDuration = intent.getIntExtra("duration", 0)
                 trackedSteps = intent.getIntExtra("steps", 0)
-                updateTrackingUI()
+                updateTrackingMetricsUI()
             }
         }
     }
@@ -82,7 +82,6 @@ class AddWorkoutActivity : AppCompatActivity() {
         setupObservers()
         setupSaveButton()
 
-        // Register tracking receiver with proper flag
         val filter = IntentFilter(TrackerService.ACTION_UPDATE)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(trackingReceiver, filter, RECEIVER_NOT_EXPORTED)
@@ -105,19 +104,17 @@ class AddWorkoutActivity : AppCompatActivity() {
         binding.activityTypeSpinner.setOnItemClickListener { _, _, position, _ ->
             val selected = ActivityType.entries[position]
             updateDynamicFields(selected.displayName)
-            updateTrackingUI(selected)
         }
     }
 
     private fun setupDynamicFields() {
-        binding.distanceLayout.visibility = View.GONE
-        binding.speedLayout.visibility = View.GONE
+        binding.treadmillLayout.visibility = View.GONE
         binding.exerciseNameLayout.visibility = View.GONE
         binding.setsLayout.visibility = View.GONE
         binding.weightLiftedLayout.visibility = View.GONE
-        binding.stepsLayout.visibility = View.GONE
         binding.intensityLayout.visibility = View.GONE
         binding.trackingLayout.visibility = View.GONE
+        binding.durationLayout.visibility = View.GONE
     }
 
     private fun updateDynamicFields(activityType: String) {
@@ -127,15 +124,8 @@ class AddWorkoutActivity : AppCompatActivity() {
         selected?.let {
             if (it.requiresTracking) {
                 binding.trackingLayout.visibility = View.VISIBLE
-                binding.durationLayout.visibility = View.GONE
-                binding.caloriesLayout.visibility = View.GONE
-                binding.distanceLayout.visibility = View.GONE
-                binding.speedLayout.visibility = View.GONE
-                binding.stepsLayout.visibility = View.GONE
             } else {
                 binding.durationLayout.visibility = View.VISIBLE
-                binding.caloriesLayout.visibility = View.VISIBLE
-                binding.trackingLayout.visibility = View.GONE
 
                 when (activityType) {
                     "Weightlifting", "Strength" -> {
@@ -144,25 +134,17 @@ class AddWorkoutActivity : AppCompatActivity() {
                         binding.weightLiftedLayout.visibility = View.VISIBLE
                     }
                     "Yoga", "Meditation", "Pilates", "Kickboxing" -> {
-                        // Intensity layout should be VISIBLE for these activities
                         binding.intensityLayout.visibility = View.VISIBLE
-                        // Fill intensity spinner
                         setupIntensitySpinner()
                     }
                     "Treadmill" -> {
-                        binding.distanceLayout.visibility = View.VISIBLE
-                        binding.speedLayout.visibility = View.VISIBLE
-                    }
-                    else -> {
-                        // For other activities, hide intensity
-                        binding.intensityLayout.visibility = View.GONE
+                        binding.treadmillLayout.visibility = View.VISIBLE
                     }
                 }
             }
         }
     }
 
-    // Add this function to setup intensity spinner
     private fun setupIntensitySpinner() {
         val intensities = arrayOf("Beginner", "Intermediate", "Advanced")
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, intensities)
@@ -170,7 +152,6 @@ class AddWorkoutActivity : AppCompatActivity() {
     }
 
     private fun setupTrackingUI() {
-        binding.trackingLayout.visibility = View.GONE
         binding.btnStartTracking.setOnClickListener {
             if (isTracking) {
                 stopTracking()
@@ -180,15 +161,11 @@ class AddWorkoutActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateTrackingUI(selected: ActivityType? = null) {
+    private fun updateTrackingMetricsUI() {
         binding.tvTrackedDistance.text = String.format(Locale.getDefault(), "%.2f km", trackedDistance)
         binding.tvTrackedCalories.text = "$trackedCalories kcal"
         binding.tvTrackedDuration.text = "$trackedDuration min"
         binding.tvTrackedSteps.text = "$trackedSteps steps"
-
-        if (selected?.requiresTracking == true) {
-            binding.trackingLayout.visibility = View.VISIBLE
-        }
     }
 
     private fun startTracking() {
@@ -198,21 +175,20 @@ class AddWorkoutActivity : AppCompatActivity() {
             return
         }
 
-        // Check permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    1001
-                )
-                return
-            }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1001
+            )
+            return
         }
 
-        val intent = Intent(this, TrackerService::class.java)
-        intent.action = TrackerService.ACTION_START
-        intent.putExtra("activity_type", activityType)
+        val intent = Intent(this, TrackerService::class.java).apply {
+            action = TrackerService.ACTION_START
+            putExtra("activity_type", activityType)
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
@@ -226,8 +202,10 @@ class AddWorkoutActivity : AppCompatActivity() {
     }
 
     private fun stopTracking() {
-        val intent = Intent(this, TrackerService::class.java)
-        intent.action = TrackerService.ACTION_STOP
+        val intent = Intent(this, TrackerService::class.java).apply {
+            action = TrackerService.ACTION_STOP
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
@@ -287,6 +265,24 @@ class AddWorkoutActivity : AppCompatActivity() {
         }
     }
 
+    // Moved outside to class body level context to resolve syntax constraint
+    private fun calculateCalories(activityType: String, durationMinutes: Int, weightKg: Double): Int {
+        val met = when (activityType) {
+            "Running" -> 9.8
+            "Cycling" -> 7.5
+            "Walking" -> 3.5
+            "Weightlifting" -> 6.0
+            "Yoga" -> 4.0
+            "Meditation" -> 1.5
+            "Strength" -> 6.0
+            "Pilates" -> 4.0
+            "Kickboxing" -> 8.0
+            "Treadmill" -> 7.0
+            else -> 5.0
+        }
+        return ((met * 3.5 * weightKg) / 200 * durationMinutes).toInt()
+    }
+
     private fun setupSaveButton() {
         binding.saveButton.setOnClickListener {
             val activityType = binding.activityTypeSpinner.text.toString()
@@ -305,39 +301,12 @@ class AddWorkoutActivity : AppCompatActivity() {
             }
 
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-            // Get user weight for calorie calculation
             val userProfile = mainRepository.getUserProfile()
             val weight = userProfile?.weight?.toDouble() ?: 70.0
 
-            val duration = binding.durationInput.text.toString().toIntOrNull() ?: 0
-
-            // Calculate calories based on activity type
-            fun calculateCalories(activityType: String, durationMinutes: Int, weightKg: Double): Int {
-                val durationHours = durationMinutes.toDouble() / 60.0
-                val met = when (activityType) {
-                    "Running" -> 9.8
-                    "Cycling" -> 7.5
-                    "Walking" -> 3.5
-                    "Weightlifting" -> 6.0
-                    "Yoga" -> 4.0
-                    "Meditation" -> 2.5
-                    "Strength" -> 6.0
-                    "Pilates" -> 4.0
-                    "Kickboxing" -> 8.0
-                    "Treadmill" -> 7.0
-                    else -> 5.0
-                }
-                return (met * 3.5 * weightKg * durationHours / 0.2).toInt()
-            }
-
-            val calories = calculateCalories(activityType, duration, weight)
-
-            // Display calories in the calories input field (make sure it's editable or displayed)
-            binding.caloriesInput.setText(calories.toString())
-
-            // Get intensity value
-            val intensity = binding.intensityInput.text?.toString()?.takeIf { it.isNotEmpty() }
+            // Conditional assignment handles GPS vs Manual fields correctly
+            val duration = if (selected?.requiresTracking == true) trackedDuration else (binding.durationInput.text.toString().toIntOrNull() ?: 0)
+            val calories = if (selected?.requiresTracking == true) trackedCalories else calculateCalories(activityType, duration, weight)
 
             val workout = Workout(
                 id = 0,
@@ -345,22 +314,23 @@ class AddWorkoutActivity : AppCompatActivity() {
                 activityType = activityType,
                 durationMinutes = duration,
                 caloriesBurned = calories,
-                distanceKm = binding.distanceInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toDoubleOrNull(),
-                speedKmh = binding.speedInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toDoubleOrNull(),
+                distanceKm = if (selected?.requiresTracking == true) trackedDistance else binding.distanceInput.text?.toString()?.toDoubleOrNull(),
+                speedKmh = if (selected?.requiresTracking == true) null else binding.speedInput.text?.toString()?.toDoubleOrNull(),
                 exerciseName = binding.exerciseNameInput.text?.toString()?.takeIf { it.isNotEmpty() },
                 sets = binding.setsInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toIntOrNull(),
                 reps = binding.repsInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toIntOrNull(),
                 weightLiftedKg = binding.weightLiftedInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toDoubleOrNull(),
-                intensity = intensity,
+                intensity = binding.intensityInput.text?.toString()?.takeIf { it.isNotEmpty() },
                 notes = binding.notesInput.text?.toString()?.takeIf { it.isNotEmpty() },
                 workoutDate = try { dateFormat.parse(selectedDate) ?: Date() } catch (e: Exception) { Date() },
                 workoutTime = selectedTime,
-                isTracked = false
+                isTracked = selected?.requiresTracking == true
             )
 
             activityViewModel.addWorkout(workout)
         }
     }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 1001 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
