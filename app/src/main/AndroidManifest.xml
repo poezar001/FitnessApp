@@ -8,11 +8,11 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <!-- FIX: You must also include the Google Play Services variant for compatibility -->
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
 
     <application
         android:name=".FitnessApplication"
@@ -26,6 +26,10 @@
         android:theme="@style/Theme.FitnessApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDgNHn1VaTY5L-y6JlpVxxdXXjphe86cak" />
 
         <!-- Service MUST be inside application tag -->
         <service
@@ -95,6 +99,13 @@
             android:exported="false"
             android:parentActivityName=".activities.MainDashboardActivity" />
 
+        <activity
+            android:name=".activities.ForgotPasswordActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.LoginActivity" />
+
     </application>
+
+
 
 </manifest>

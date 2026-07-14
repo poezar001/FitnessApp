@@ -113,7 +113,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.forgotPassword.setOnClickListener {
-            Toast.makeText(this, "Please contact support to reset your password", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
     }
 }

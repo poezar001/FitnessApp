@@ -97,6 +97,16 @@ class AuthRepository(private val context: Context) {
 
         return birthday != null && gender != null && height > 0 && weight > 0
     }
+
+    suspend fun resetPassword(email: String, newPassword: String): AuthResponse {
+        return suspendCancellableCoroutine { continuation ->
+            NetworkUtils.resetPassword(context, email, newPassword) { success, message ->
+                continuation.resume(AuthResponse(success, message))
+            }
+        }
+    }
+
+
 }
 
 

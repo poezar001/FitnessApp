@@ -19,8 +19,9 @@ data class Workout(
     val notes: String? = null,
     val workoutDate: Date,
     val workoutTime: String? = null,
-    val intensity: String? = null,  // For Yoga, Meditation
-    val isTracked: Boolean = false  // True for real-time tracked workouts
+    val intensity: String? = null,
+    val isTracked: Boolean = false,
+    val routePoints: String? = null // Stores list of LatLng coordinates as a JSON string
 ): Serializable
 
 data class WorkoutSummary(

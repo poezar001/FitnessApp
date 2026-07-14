@@ -476,6 +476,46 @@ object NetworkUtils {
         requestQueue.add(request)
     }
 
+    fun resetPassword(
+        context: Context,
+        email: String,
+        newPassword: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        if (!isNetworkAvailable(context)) {
+            callback(false, "No internet connection")
+            return
+        }
+
+        val url = BASE_URL + "reset_password.php"
+        val jsonBody = Gson().toJson(mapOf(
+            "email" to email,
+            "new_password" to newPassword
+        ))
+
+        val request = object : StringRequest(
+            Request.Method.POST, url,
+            { response ->
+                try {
+                    val json = JSONObject(response)
+                    callback(json.getBoolean("success"), json.getString("message"))
+                } catch (e: Exception) {
+                    callback(false, "Error parsing response")
+                }
+            },
+            { error ->
+                callback(false, "Network error: ${error.message}")
+            }
+        ) {
+            override fun getBody(): ByteArray = jsonBody.toByteArray()
+            override fun getBodyContentType(): String = "application/json"
+        }
+        request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+        requestQueue.add(request)
+    }
+
+
+
 
 }
 

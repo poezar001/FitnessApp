@@ -36,4 +36,16 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             _isLoading.value = false
         }
     }
+
+    private val _resetPasswordResult = MutableLiveData<AuthResponse>()
+    val resetPasswordResult: LiveData<AuthResponse> = _resetPasswordResult
+
+    fun resetPassword(email: String, newPassword: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.resetPassword(email, newPassword)
+            _resetPasswordResult.value = result
+            _isLoading.value = false
+        }
+    }
 }

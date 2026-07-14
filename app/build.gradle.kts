@@ -79,4 +79,5 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     // Google Play Services for Location
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }

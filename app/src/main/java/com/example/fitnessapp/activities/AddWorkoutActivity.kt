@@ -11,9 +11,12 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +29,10 @@ import com.example.fitnessapp.models.Workout
 import com.example.fitnessapp.repository.MainRepository
 import com.example.fitnessapp.services.TrackerService
 import com.example.fitnessapp.viewmodels.ActivityViewModel
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.PolylineOptions
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,12 +43,16 @@ class AddWorkoutActivity : AppCompatActivity() {
     private var selectedDate: String = ""
     private var selectedTime: String = ""
     private var isTracking = false
+    private var isReceiverRegistered = false
 
-    // Real-time tracking data
     private var trackedDistance = 0.0
     private var trackedCalories = 0
     private var trackedDuration = 0
     private var trackedSteps = 0
+
+    private var googleMap: GoogleMap? = null
+    private var currentRoutePoints = ArrayList<LatLng>()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val activityViewModel: ActivityViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
@@ -55,15 +66,41 @@ class AddWorkoutActivity : AppCompatActivity() {
     private val trackingReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == TrackerService.ACTION_UPDATE) {
-                trackedDistance = intent.getDoubleExtra("distance", 0.0)
-                trackedCalories = intent.getIntExtra("calories", 0)
-                trackedDuration = intent.getIntExtra("duration", 0)
-                trackedSteps = intent.getIntExtra("steps", 0)
-                updateTrackingMetricsUI()
+                android.util.Log.d("AddWorkoutActivity", "✅ Received update broadcast!")
+
+                val distance = intent.getDoubleExtra("distance", 0.0)
+                val calories = intent.getIntExtra("calories", 0)
+                val duration = intent.getIntExtra("duration", 0)
+                val steps = intent.getIntExtra("steps", 0)
+
+                android.util.Log.d("AddWorkoutActivity", "Raw data - Distance: $distance, Calories: $calories, Duration: $duration, Steps: $steps")
+
+                // Update values
+                trackedDistance = distance
+                trackedCalories = calories
+                trackedDuration = duration
+                trackedSteps = steps
+
+                // FIX: Safe Parcelable Array List extraction
+                val points = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableArrayListExtra("pathPoints", LatLng::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableArrayListExtra<LatLng>("pathPoints")
+                }
+
+                points?.let {
+                    currentRoutePoints = it
+                    drawRoutePath(it)
+                }
+
+                // Update UI on main thread
+                mainHandler.post {
+                    updateTrackingMetricsUI()
+                }
             }
         }
     }
-
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +110,18 @@ class AddWorkoutActivity : AppCompatActivity() {
         mainRepository = MainRepository(this)
         activityViewModel.init(this)
 
+        // Initialize MapView
+        binding.mapView.onCreate(savedInstanceState)
+        binding.mapView.getMapAsync { map ->
+            googleMap = map
+            map.uiSettings.isZoomControlsEnabled = true
+            map.uiSettings.isMyLocationButtonEnabled = true
+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                map.isMyLocationEnabled = true
+            }
+        }
+
         setupToolbar()
         setupSpinner()
         setupDatePicker()
@@ -81,12 +130,47 @@ class AddWorkoutActivity : AppCompatActivity() {
         setupTrackingUI()
         setupObservers()
         setupSaveButton()
+        registerTrackingReceiver()
+    }
 
-        val filter = IntentFilter(TrackerService.ACTION_UPDATE)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(trackingReceiver, filter, RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(trackingReceiver, filter)
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private fun registerTrackingReceiver() {
+        if (!isReceiverRegistered) {
+            val filter = IntentFilter(TrackerService.ACTION_UPDATE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(trackingReceiver, filter, RECEIVER_NOT_EXPORTED)
+            } else {
+                registerReceiver(trackingReceiver, filter)
+            }
+            isReceiverRegistered = true
+            android.util.Log.d("AddWorkoutActivity", "Receiver registered for ${TrackerService.ACTION_UPDATE}")
+        }
+    }
+
+    private fun unregisterTrackingReceiver() {
+        if (isReceiverRegistered) {
+            try {
+                unregisterReceiver(trackingReceiver)
+                isReceiverRegistered = false
+            } catch (e: Exception) {
+                android.util.Log.d("AddWorkoutActivity", "Receiver already unregistered")
+            }
+        }
+    }
+
+    private fun drawRoutePath(points: List<LatLng>) {
+        if (points.isEmpty() || googleMap == null) return
+
+        googleMap?.clear()
+        val polylineOptions = PolylineOptions()
+            .addAll(points)
+            .color(ContextCompat.getColor(this, R.color.primary))
+            .width(10f)
+
+        googleMap?.addPolyline(polylineOptions)
+
+        if (points.isNotEmpty()) {
+            googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(points.last(), 16f))
         }
     }
 
@@ -114,18 +198,21 @@ class AddWorkoutActivity : AppCompatActivity() {
         binding.weightLiftedLayout.visibility = View.GONE
         binding.intensityLayout.visibility = View.GONE
         binding.trackingLayout.visibility = View.GONE
-        binding.durationLayout.visibility = View.GONE
+        binding.durationLayout.visibility = View.VISIBLE
     }
 
     private fun updateDynamicFields(activityType: String) {
         setupDynamicFields()
-
         val selected = ActivityType.entries.find { it.displayName == activityType }
         selected?.let {
             if (it.requiresTracking) {
                 binding.trackingLayout.visibility = View.VISIBLE
+                binding.durationLayout.visibility = View.GONE
+                binding.mapView.visibility = View.VISIBLE
             } else {
                 binding.durationLayout.visibility = View.VISIBLE
+                binding.trackingLayout.visibility = View.GONE
+                binding.mapView.visibility = View.GONE
 
                 when (activityType) {
                     "Weightlifting", "Strength" -> {
@@ -153,19 +240,23 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     private fun setupTrackingUI() {
         binding.btnStartTracking.setOnClickListener {
-            if (isTracking) {
-                stopTracking()
-            } else {
-                startTracking()
-            }
+            if (isTracking) stopTracking() else startTracking()
         }
     }
 
     private fun updateTrackingMetricsUI() {
-        binding.tvTrackedDistance.text = String.format(Locale.getDefault(), "%.2f km", trackedDistance)
-        binding.tvTrackedCalories.text = "$trackedCalories kcal"
-        binding.tvTrackedDuration.text = "$trackedDuration min"
-        binding.tvTrackedSteps.text = "$trackedSteps steps"
+        android.util.Log.d("AddWorkoutActivity", "Updating UI - Distance: $trackedDistance, Steps: $trackedSteps")
+
+        // Find TextViews by ID and update directly
+        val tvDistance = findViewById<TextView>(R.id.tvTrackedDistance)
+        val tvCalories = findViewById<TextView>(R.id.tvTrackedCalories)
+        val tvDuration = findViewById<TextView>(R.id.tvTrackedDuration)
+        val tvSteps = findViewById<TextView>(R.id.tvTrackedSteps)
+
+        tvDistance?.text = String.format(Locale.getDefault(), "%.3f km", trackedDistance)
+        tvCalories?.text = "${trackedCalories} kcal"
+        tvDuration?.text = "${trackedDuration} min"
+        tvSteps?.text = "$trackedSteps steps"
     }
 
     private fun startTracking() {
@@ -175,12 +266,22 @@ class AddWorkoutActivity : AppCompatActivity() {
             return
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                1001
-            )
+        val permissionsNeeded = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            permissionsNeeded.add(Manifest.permission.ACTIVITY_RECOGNITION)
+        }
+
+        val permissionsToRequest = permissionsNeeded.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), 1001)
             return
         }
 
@@ -198,39 +299,37 @@ class AddWorkoutActivity : AppCompatActivity() {
         isTracking = true
         binding.btnStartTracking.text = "Stop Tracking"
         binding.btnStartTracking.setBackgroundColor(ContextCompat.getColor(this, R.color.error))
-        Toast.makeText(this, "Tracking started for $activityType", Toast.LENGTH_SHORT).show()
+
+        // Reset values
+        trackedDistance = 0.0
+        trackedCalories = 0
+        trackedDuration = 0
+        trackedSteps = 0
+        updateTrackingMetricsUI()
+
+        android.util.Log.d("AddWorkoutActivity", "Tracking started for: $activityType")
+        Toast.makeText(this, "Tracking started for $activityType!", Toast.LENGTH_SHORT).show()
     }
 
     private fun stopTracking() {
         val intent = Intent(this, TrackerService::class.java).apply {
             action = TrackerService.ACTION_STOP
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
-
+        startService(intent)
         isTracking = false
         binding.btnStartTracking.text = "Start Tracking"
         binding.btnStartTracking.setBackgroundColor(ContextCompat.getColor(this, R.color.primary))
+        android.util.Log.d("AddWorkoutActivity", "Tracking stopped")
         Toast.makeText(this, "Tracking stopped", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupDatePicker() {
         binding.dateInput.setOnClickListener {
             val calendar = Calendar.getInstance()
-            DatePickerDialog(
-                this,
-                { _, year, month, day ->
-                    selectedDate = "$year-${month + 1}-$day"
-                    binding.dateInput.setText(selectedDate)
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
+            DatePickerDialog(this, { _, year, month, day ->
+                selectedDate = String.format(Locale.getDefault(), "%d-%02d-%02d", year, month + 1, day)
+                binding.dateInput.setText(selectedDate)
+            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
         }
     }
 
@@ -256,7 +355,6 @@ class AddWorkoutActivity : AppCompatActivity() {
                 binding.errorText.visibility = View.VISIBLE
             }
         }
-
         activityViewModel.isLoading.observe(this) { isLoading ->
             if (isLoading) {
                 binding.progressBar.visibility = View.VISIBLE
@@ -265,17 +363,14 @@ class AddWorkoutActivity : AppCompatActivity() {
         }
     }
 
-    // Moved outside to class body level context to resolve syntax constraint
     private fun calculateCalories(activityType: String, durationMinutes: Int, weightKg: Double): Int {
         val met = when (activityType) {
             "Running" -> 9.8
             "Cycling" -> 7.5
             "Walking" -> 3.5
-            "Weightlifting" -> 6.0
-            "Yoga" -> 4.0
+            "Weightlifting", "Strength" -> 6.0
+            "Yoga", "Pilates" -> 4.0
             "Meditation" -> 1.5
-            "Strength" -> 6.0
-            "Pilates" -> 4.0
             "Kickboxing" -> 8.0
             "Treadmill" -> 7.0
             else -> 5.0
@@ -288,14 +383,8 @@ class AddWorkoutActivity : AppCompatActivity() {
             val activityType = binding.activityTypeSpinner.text.toString()
             val selected = ActivityType.entries.find { it.displayName == activityType }
 
-            if (activityType.isEmpty()) {
-                binding.errorText.text = "Please select an activity"
-                binding.errorText.visibility = View.VISIBLE
-                return@setOnClickListener
-            }
-
-            if (selectedDate.isEmpty()) {
-                binding.errorText.text = "Please select a date"
+            if (activityType.isEmpty() || selectedDate.isEmpty()) {
+                binding.errorText.text = "Please fill all required fields"
                 binding.errorText.visibility = View.VISIBLE
                 return@setOnClickListener
             }
@@ -304,8 +393,13 @@ class AddWorkoutActivity : AppCompatActivity() {
             val userProfile = mainRepository.getUserProfile()
             val weight = userProfile?.weight?.toDouble() ?: 70.0
 
-            // Conditional assignment handles GPS vs Manual fields correctly
-            val duration = if (selected?.requiresTracking == true) trackedDuration else (binding.durationInput.text.toString().toIntOrNull() ?: 0)
+            // Fix: Ensure duration is at least 1 minute if tracking just started to avoid validation failures
+            val duration = if (selected?.requiresTracking == true) {
+                if (trackedDuration > 0) trackedDuration else 1
+            } else {
+                binding.durationInput.text.toString().toIntOrNull() ?: 0
+            }
+
             val calories = if (selected?.requiresTracking == true) trackedCalories else calculateCalories(activityType, duration, weight)
 
             val workout = Workout(
@@ -315,6 +409,7 @@ class AddWorkoutActivity : AppCompatActivity() {
                 durationMinutes = duration,
                 caloriesBurned = calories,
                 distanceKm = if (selected?.requiresTracking == true) trackedDistance else binding.distanceInput.text?.toString()?.toDoubleOrNull(),
+                steps = if (selected?.requiresTracking == true) trackedSteps else null,
                 speedKmh = if (selected?.requiresTracking == true) null else binding.speedInput.text?.toString()?.toDoubleOrNull(),
                 exerciseName = binding.exerciseNameInput.text?.toString()?.takeIf { it.isNotEmpty() },
                 sets = binding.setsInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toIntOrNull(),
@@ -324,7 +419,9 @@ class AddWorkoutActivity : AppCompatActivity() {
                 notes = binding.notesInput.text?.toString()?.takeIf { it.isNotEmpty() },
                 workoutDate = try { dateFormat.parse(selectedDate) ?: Date() } catch (e: Exception) { Date() },
                 workoutTime = selectedTime,
-                isTracked = selected?.requiresTracking == true
+                isTracked = selected?.requiresTracking == true,
+                // ADDED THIS FIELD: Converts and saves the map route points as a JSON string
+                routePoints = if (selected?.requiresTracking == true) convertPathPointsToJson(currentRoutePoints) else null
             )
 
             activityViewModel.addWorkout(workout)
@@ -333,19 +430,37 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1001 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == 1001 && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
             startTracking()
         } else {
-            Toast.makeText(this, "Location permission required for tracking", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permissions required for tracking", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.mapView.onResume()
+        registerTrackingReceiver()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        binding.mapView.onPause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        try {
-            unregisterReceiver(trackingReceiver)
-        } catch (e: Exception) {
-            // Receiver not registered
-        }
+        binding.mapView.onDestroy()
+        unregisterTrackingReceiver()
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        binding.mapView.onLowMemory()
+    }
+
+    private fun convertPathPointsToJson(points: List<LatLng>): String? {
+        if (points.isEmpty()) return null
+        return com.google.gson.Gson().toJson(points)
     }
 }
