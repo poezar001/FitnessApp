@@ -52,9 +52,19 @@ class MainRepository(private val context: Context) {
     }
 
     suspend fun saveWorkout(workout: Workout): Boolean {
-        return suspendCancellableCoroutine { continuation ->
-            NetworkUtils.saveWorkout(context, workout) { success, message ->
-                continuation.resume(success)
+        return kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+            android.util.Log.d("MainRepository", "Saving workout: ${workout.activityType}, Calories: ${workout.caloriesBurned}")
+
+            // Always use applicationContext for network singletons to prevent memory leaks
+            NetworkUtils.saveWorkout(context.applicationContext, workout) { success, message ->
+                android.util.Log.d("MainRepository", "Save result: success=$success, message=$message")
+
+                // CRITICAL FIX: Only resume if the coroutine hasn't been cancelled
+                if (continuation.isActive) {
+                    continuation.resume(success) {
+                        // Optional: handle cancellation if needed
+                    }
+                }
             }
         }
     }

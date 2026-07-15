@@ -58,47 +58,122 @@ class ActivityViewModel(private val repository: MainRepository) : ViewModel() {
     fun addWorkout(workout: Workout) {
         viewModelScope.launch {
             _isLoading.value = true
-            val success = repository.saveWorkout(workout)
-            _saveResult.value = success
-            if (success) {
-                loadWorkouts()
-                refreshHomeData()
-                refreshAnalytics()
-                checkAndUnlockAchievements()
-                updateGoalProgress()
+            try {
+                // This now waits until NetworkUtils calls callback(...) and returns the actual server result
+                val success = repository.saveWorkout(workout)
+                android.util.Log.d("ActivityViewModel", "Save result: $success")
 
-                // Send notification after workout
-                sendGoalNotification(workout)
+                _saveResult.value = success
+
+                if (success) {
+                    android.util.Log.d("ActivityViewModel", "✅ Workout saved: ${workout.activityType}")
+
+                    // Perform data updates on background thread
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        updateGoalProgress()
+                        checkAndUnlockAchievements()
+                    }
+
+                    loadWorkouts()
+                    refreshHomeData()
+                    refreshAnalytics()
+
+                    // Send push or local goal achievements
+                    sendWorkoutNotification(workout)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ActivityViewModel", "Error: ${e.message}")
+                _saveResult.value = false
             }
             _isLoading.value = false
         }
     }
 
-    private suspend fun sendGoalNotification(workout: Workout) {
+    private suspend fun sendWorkoutNotification(workout: Workout) {
         try {
+            android.util.Log.d("ActivityViewModel", "📢 Sending notification for: ${workout.activityType}")
+
+            if (!::context.isInitialized) {
+                android.util.Log.e("ActivityViewModel", "❌ Context not initialized!")
+                return
+            }
+
+            val notificationHelper = GoalNotificationHelper(context)
+            val userId = repository.getUserId()
             val goals = repository.getActiveGoals()
+
+            android.util.Log.d("ActivityViewModel", "📊 User ID: $userId, Goals: ${goals.size}")
+
+            // ✅ ALWAYS send notification, even without goals
+            val activityEmoji = getActivityEmoji(workout.activityType)
+
             if (goals.isNotEmpty()) {
                 val goal = goals.first()
-
                 val currentCalories = repository.getTotalCaloriesThisWeek()
                 val targetCalories = goal.targetValue
                 val progress = if (targetCalories > 0) {
                     ((currentCalories / targetCalories) * 100).toInt().coerceIn(0, 100)
                 } else 0
                 val remaining = (targetCalories - currentCalories).coerceAtLeast(0.0)
-                val userId = repository.getUserId()
 
-                val notificationHelper = GoalNotificationHelper(context)
+                android.util.Log.d("ActivityViewModel", "📊 Progress: $progress%, Remaining: $remaining")
 
+                if (progress >= 100) {
+                    notificationHelper.sendGoalAchievedNotification(
+                        goal.type, targetCalories, goal.unit, userId, workout.activityType
+                    )
+                } else {
+                    notificationHelper.sendGoalProgressNotification(
+                        goal.type, progress, remaining, goal.unit,
+                        workout.caloriesBurned, userId, workout.activityType
+                    )
+                }
+            } else {
+                // ✅ No goals - send workout completion notification
+                android.util.Log.d("ActivityViewModel", "ℹ️ No goals, sending workout completion notification")
+                notificationHelper.sendCustomNotification(
+                    title = "💪 Workout Complete!",
+                    message = "$activityEmoji Great job! You completed ${workout.activityType} for ${workout.durationMinutes} minutes, burning ${workout.caloriesBurned} kcal!",
+                    userId = userId
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ActivityViewModel", "❌ Error sending notification: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    private suspend fun sendGoalNotification(
+        workout: Workout,
+        notificationHelper: GoalNotificationHelper,
+        userId: Int
+    ) {
+        try {
+            val goals = repository.getActiveGoals()
+            if (goals.isNotEmpty()) {
+                val goal = goals.first()
+                val currentCalories = repository.getTotalCaloriesThisWeek()
+                val targetCalories = goal.targetValue
+                val progress = if (targetCalories > 0) {
+                    ((currentCalories / targetCalories) * 100).toInt().coerceIn(0, 100)
+                } else 0
+                val remaining = (targetCalories - currentCalories).coerceAtLeast(0.0)
+
+                android.util.Log.d("ActivityViewModel", "📊 Goal: ${goal.type}, Progress: $progress%, Remaining: $remaining, Calories: $currentCalories")
+
+                val activityEmoji = getActivityEmoji(workout.activityType)
+
+                // ✅ FIXED: Send notification for ALL progress levels, not just milestones
                 if (progress >= 100) {
                     notificationHelper.sendGoalAchievedNotification(
                         goal.type,
                         targetCalories,
                         goal.unit,
                         userId,
-                        workout.activityType  // Pass activity type
+                        workout.activityType
                     )
                 } else {
+                    // ✅ ALWAYS send progress notification
                     notificationHelper.sendGoalProgressNotification(
                         goal.type,
                         progress,
@@ -106,68 +181,86 @@ class ActivityViewModel(private val repository: MainRepository) : ViewModel() {
                         goal.unit,
                         workout.caloriesBurned,
                         userId,
-                        workout.activityType  // Pass activity type
+                        workout.activityType
                     )
                 }
             }
         } catch (e: Exception) {
+            android.util.Log.e("ActivityViewModel", "❌ Error in sendGoalNotification: ${e.message}")
             e.printStackTrace()
         }
     }
 
-
+    private fun getActivityEmoji(activityType: String): String {
+        return when (activityType) {
+            "Running" -> "🏃"
+            "Cycling" -> "🚲"
+            "Walking" -> "🚶"
+            "Weightlifting" -> "💪"
+            "Yoga" -> "🧘"
+            "Meditation" -> "🧠"
+            "Strength" -> "🏋️"
+            "Pilates" -> "🧘‍♀️"
+            "Kickboxing" -> "🥊"
+            "Treadmill" -> "🏃‍♂️"
+            else -> "💪"
+        }
+    }
 
     private fun refreshHomeData() {
         viewModelScope.launch {
-            val stats = repository.getDailyStats()
-            val todayWorkouts = repository.getWorkouts("Today", "All")
+            repository.getDailyStats()
+            repository.getWorkouts("Today", "All")
         }
     }
 
     private fun refreshAnalytics() {
         viewModelScope.launch {
-            val analytics = repository.getAnalytics()
+            repository.getAnalytics()
         }
     }
 
     private suspend fun updateGoalProgress() {
-        val goals = repository.getActiveGoals()
-        goals.forEach { goal ->
-            val current = when (goal.type) {
-                "Calories" -> repository.getTotalCaloriesThisWeek()
-                "Distance" -> repository.getTotalDistanceThisWeek()
-                "Workouts" -> repository.getTotalWorkoutsThisWeek()
-                else -> goal.currentValue
+        try {
+            val goals = repository.getActiveGoals()
+            goals.forEach { goal ->
+                val current = when (goal.type) {
+                    "Calories" -> repository.getTotalCaloriesThisWeek()
+                    "Distance" -> repository.getTotalDistanceThisWeek()
+                    "Workouts" -> repository.getTotalWorkoutsThisWeek()
+                    else -> goal.currentValue
+                }
+                repository.updateGoalProgress(goal.id, current)
             }
-            repository.updateGoalProgress(goal.id, current)
+            android.util.Log.d("ActivityViewModel", "✅ Goal progress updated")
+        } catch (e: Exception) {
+            android.util.Log.e("ActivityViewModel", "❌ Error updating goal progress: ${e.message}")
         }
     }
 
     private suspend fun checkAndUnlockAchievements() {
-        val stats = repository.getDailyStats()
-        val totalWorkouts = repository.getTotalWorkoutsCount()
+        try {
+            val totalWorkouts = repository.getTotalWorkoutsCount()
+            if (totalWorkouts == 1) {
+                repository.unlockAchievement("First Workout", "🏆")
+            }
 
-        // Check for First Workout achievement
-        if (totalWorkouts == 1) {
-            repository.unlockAchievement("First Workout", "🏆")
-        }
+            val totalCalories = repository.getTotalCaloriesAllTime()
+            if (totalCalories >= 1000) {
+                repository.unlockAchievement("1000 Calories Burned", "🔥")
+            }
 
-        // Check for 1000 Calories achievement
-        val totalCalories = repository.getTotalCaloriesAllTime()
-        if (totalCalories >= 1000) {
-            repository.unlockAchievement("1000 Calories Burned", "🔥")
-        }
+            val streak = repository.getCurrentStreak()
+            if (streak >= 7) {
+                repository.unlockAchievement("7-Day Streak", "⭐")
+            }
 
-        // Check for 7-Day Streak
-        val streak = repository.getCurrentStreak()
-        if (streak >= 7) {
-            repository.unlockAchievement("7-Day Streak", "⭐")
-        }
-
-        // Check for 5K Run
-        val totalDistance = repository.getTotalDistanceAllTime()
-        if (totalDistance >= 5.0) {
-            repository.unlockAchievement("5K Runner", "🏃")
+            val totalDistance = repository.getTotalDistanceAllTime()
+            if (totalDistance >= 5.0) {
+                repository.unlockAchievement("5K Runner", "🏃")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ActivityViewModel", "❌ Error checking achievements: ${e.message}")
         }
     }
 

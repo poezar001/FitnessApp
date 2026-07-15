@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import android.util.Log
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
@@ -70,8 +71,8 @@ object NetworkUtils {
             },
             { error -> callback(AuthResponse(false, "Network error: ${error.message}")) }
         ) {
-            override fun getBody(): ByteArray = jsonBody.toByteArray()
-            override fun getBodyContentType(): String = "application/json"
+            override fun getBody(): ByteArray = jsonBody.toByteArray(Charsets.UTF_8)
+            override fun getBodyContentType(): String = "application/json; charset=utf-8"
         }
         request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
         requestQueue.add(request)
@@ -103,8 +104,8 @@ object NetworkUtils {
             },
             { error -> callback(AuthResponse(false, "Network error: ${error.message}")) }
         ) {
-            override fun getBody(): ByteArray = jsonBody.toByteArray()
-            override fun getBodyContentType(): String = "application/json"
+            override fun getBody(): ByteArray = jsonBody.toByteArray(Charsets.UTF_8)
+            override fun getBodyContentType(): String = "application/json; charset=utf-8"
         }
         request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
         requestQueue.add(request)
@@ -135,8 +136,8 @@ object NetworkUtils {
             },
             { error -> callback(false, "Network error: ${error.message}") }
         ) {
-            override fun getBody(): ByteArray = jsonBody.toByteArray()
-            override fun getBodyContentType(): String = "application/json"
+            override fun getBody(): ByteArray = jsonBody.toByteArray(Charsets.UTF_8)
+            override fun getBodyContentType(): String = "application/json; charset=utf-8"
         }
         stringRequest.retryPolicy =
             DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
@@ -247,6 +248,8 @@ object NetworkUtils {
                 "sets" to workout.sets,
                 "reps" to workout.reps,
                 "weight_lifted_kg" to workout.weightLiftedKg,
+                "steps" to workout.steps,         // Added missing field
+                "intensity" to workout.intensity, // Added missing field
                 "notes" to workout.notes,
                 "workout_date" to java.text.SimpleDateFormat(
                     "yyyy-MM-dd",
@@ -259,17 +262,24 @@ object NetworkUtils {
         val request = object : StringRequest(
             Request.Method.POST, url,
             { response ->
+                // ADD THIS LOG: This will expose exactly what PHP is returning!
+                android.util.Log.d("NetworkUtils", "RAW PHP RESPONSE: $response")
+
                 try {
                     val json = JSONObject(response)
                     callback(json.getBoolean("success"), json.getString("message"))
                 } catch (e: Exception) {
+                    android.util.Log.e("NetworkUtils", "JSON Parse Exception: ${e.message}")
                     callback(false, "Error parsing response")
                 }
             },
-            { error -> callback(false, "Network error: ${error.message}") }
+            { error ->
+                android.util.Log.e("NetworkUtils", "Volley Error: ${error.message}")
+                callback(false, "Network error: ${error.message}")
+            }
         ) {
-            override fun getBody(): ByteArray = jsonBody.toByteArray()
-            override fun getBodyContentType(): String = "application/json"
+            override fun getBody(): ByteArray = jsonBody.toByteArray(Charsets.UTF_8)
+            override fun getBodyContentType(): String = "application/json; charset=utf-8"
         }
         request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
         requestQueue.add(request)
@@ -386,8 +396,8 @@ object NetworkUtils {
             },
             { error -> callback(false, "Network error: ${error.message}") }
         ) {
-            override fun getBody(): ByteArray = jsonBody.toByteArray()
-            override fun getBodyContentType(): String = "application/json"
+            override fun getBody(): ByteArray = jsonBody.toByteArray(Charsets.UTF_8)
+            override fun getBodyContentType(): String = "application/json; charset=utf-8"
         }
         request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
         requestQueue.add(request)
@@ -452,7 +462,6 @@ object NetworkUtils {
             return
         }
 
-        // Target your exact PHP file name here
         val url = "${BASE_URL}get_notification_count.php?user_id=$userId"
 
         val request = StringRequest(
@@ -461,8 +470,7 @@ object NetworkUtils {
                 try {
                     val json = JSONObject(response)
                     if (json.getBoolean("success")) {
-                        // Ensure this matches the JSON key your PHP script outputs (e.g., "unread_count" or "count")
-                        val count = json.getInt("unread_count")
+                        val count = json.getInt("count")
                         callback(count)
                     } else {
                         callback(0)
@@ -475,6 +483,48 @@ object NetworkUtils {
         )
         requestQueue.add(request)
     }
+
+    fun saveNotification(
+        context: Context,
+        userId: Int,
+        title: String,
+        message: String,
+        type: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        if (!isNetworkAvailable(context)) {
+            callback(false, "No internet connection")
+            return
+        }
+
+        val url = BASE_URL + "save_notification.php"
+        val jsonBody = Gson().toJson(mapOf(
+            "user_id" to userId,
+            "title" to title,
+            "message" to message,
+            "type" to type
+        ))
+
+        val request = object : StringRequest(
+            Request.Method.POST, url,
+            { response ->
+                try {
+                    val json = JSONObject(response)
+                    callback(json.getBoolean("success"), json.getString("message"))
+                } catch (e: Exception) {
+                    callback(false, "Error parsing response")
+                }
+            },
+            { error -> callback(false, "Network error: ${error.message}") }
+        ) {
+            override fun getBody(): ByteArray = jsonBody.toByteArray(Charsets.UTF_8)
+            override fun getBodyContentType(): String = "application/json; charset=utf-8"
+        }
+        request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+        requestQueue.add(request)
+    }
+
+
 
     fun resetPassword(
         context: Context,
@@ -507,16 +557,12 @@ object NetworkUtils {
                 callback(false, "Network error: ${error.message}")
             }
         ) {
-            override fun getBody(): ByteArray = jsonBody.toByteArray()
-            override fun getBodyContentType(): String = "application/json"
+            override fun getBody(): ByteArray = jsonBody.toByteArray(Charsets.UTF_8)
+            override fun getBodyContentType(): String = "application/json; charset=utf-8"
         }
         request.retryPolicy = DefaultRetryPolicy(30000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
         requestQueue.add(request)
     }
-
-
-
-
 }
 
 data class ApiGoal(

@@ -51,51 +51,62 @@ class GoalNotificationHelper(private val context: Context) {
         userId: Int = 0,
         activityType: String = ""
     ) {
-        val intent = Intent(context, MainDashboardActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
+        try {
+            android.util.Log.d("NotificationHelper", "📢 Sending progress notification: $goalType, progress: $progress%")
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+            val intent = Intent(context, MainDashboardActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
 
-        val activityEmoji = getActivityEmoji(activityType)
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
 
-        // Build message
-        val message = when {
-            progress >= 100 -> "🎉 Amazing! You reached your $goalType goal!"
-            caloriesBurned > 0 && progress >= 75 -> "$activityEmoji You burned $caloriesBurned kcal! Only $remaining $unit to go!"
-            caloriesBurned > 0 && progress >= 50 -> "$activityEmoji Great job! $caloriesBurned kcal burned, $remaining $unit to go!"
-            progress >= 75 -> "💪 Almost there! Only $remaining $unit to go!"
-            progress >= 50 -> "🌟 Halfway there! $remaining $unit to go!"
-            else -> "💪 Keep pushing! You're $progress% to your $goalType goal ($remaining $unit left)!"
-        }
+            val activityEmoji = getActivityEmoji(activityType)
 
-        val title = when {
-            progress >= 100 -> "🎉 Goal Achieved!"
-            progress >= 75 -> "💪 Almost There!"
-            progress >= 50 -> "🌟 Great Progress!"
-            progress >= 25 -> "🚀 Good Start!"
-            else -> "🎯 Goal Progress"
-        }
+            val message = when {
+                progress >= 100 -> "🎉 Amazing! You reached your $goalType goal!"
+                caloriesBurned > 0 && progress >= 75 -> "$activityEmoji You burned $caloriesBurned kcal! Only $remaining $unit to go!"
+                caloriesBurned > 0 && progress >= 50 -> "$activityEmoji Great job! $caloriesBurned kcal burned, $remaining $unit to go!"
+                progress >= 75 -> "💪 Almost there! Only $remaining $unit to go!"
+                progress >= 50 -> "🌟 Halfway there! $remaining $unit to go!"
+                else -> "💪 Keep pushing! You're $progress% to your $goalType goal ($remaining $unit left)!"
+            }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setSmallIcon(R.drawable.ic_fitness_plus)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
-            .build()
+            val title = when {
+                progress >= 100 -> "🎉 Goal Achieved!"
+                progress >= 75 -> "💪 Almost There!"
+                progress >= 50 -> "🌟 Great Progress!"
+                progress >= 25 -> "🚀 Good Start!"
+                else -> "🎯 Goal Progress"
+            }
 
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager?.notify(NOTIFICATION_ID + progress, notification)
+            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setSmallIcon(R.drawable.ic_fitness_plus)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build()
 
-        if (userId > 0) {
-            saveNotificationToDatabase(userId, title, message, "goal_progress")
+            val manager = context.getSystemService(NotificationManager::class.java)
+            if (manager != null) {
+                manager.notify((NOTIFICATION_ID + progress + System.currentTimeMillis() % 1000).toInt(), notification)
+                android.util.Log.d("NotificationHelper", "✅ Notification displayed!")
+            } else {
+                android.util.Log.e("NotificationHelper", "❌ NotificationManager is null")
+            }
+
+            if (userId > 0) {
+                saveNotificationToDatabase(userId, title, message, "goal_progress")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("NotificationHelper", "❌ Error sending notification: ${e.message}")
+            e.printStackTrace()
         }
     }
 

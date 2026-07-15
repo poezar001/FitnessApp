@@ -28,6 +28,7 @@ import com.example.fitnessapp.models.ActivityType
 import com.example.fitnessapp.models.Workout
 import com.example.fitnessapp.repository.MainRepository
 import com.example.fitnessapp.services.TrackerService
+import com.example.fitnessapp.utils.NetworkUtils
 import com.example.fitnessapp.viewmodels.ActivityViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -345,20 +346,26 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     private fun setupObservers() {
         activityViewModel.saveResult.observe(this) { success ->
+            // Stop progress spinners
             binding.progressBar.visibility = View.GONE
             binding.saveButton.isEnabled = true
+
             if (success) {
+                android.util.Log.d("AddWorkoutActivity", "✅ Workout saved successfully!")
                 Toast.makeText(this, "Workout saved successfully!", Toast.LENGTH_SHORT).show()
-                finish()
+                finish() // Close activity only on actual success
             } else {
+                android.util.Log.e("AddWorkoutActivity", "❌ Failed to save workout")
                 binding.errorText.text = "Failed to save workout. Please try again."
                 binding.errorText.visibility = View.VISIBLE
             }
         }
+
         activityViewModel.isLoading.observe(this) { isLoading ->
             if (isLoading) {
                 binding.progressBar.visibility = View.VISIBLE
                 binding.saveButton.isEnabled = false
+                binding.errorText.visibility = View.GONE
             }
         }
     }
