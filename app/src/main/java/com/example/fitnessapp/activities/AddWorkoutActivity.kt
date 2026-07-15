@@ -132,6 +132,7 @@ class AddWorkoutActivity : AppCompatActivity() {
         setupObservers()
         setupSaveButton()
         registerTrackingReceiver()
+        checkNotificationPermission()
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -353,11 +354,23 @@ class AddWorkoutActivity : AppCompatActivity() {
             if (success) {
                 android.util.Log.d("AddWorkoutActivity", "✅ Workout saved successfully!")
                 Toast.makeText(this, "Workout saved successfully!", Toast.LENGTH_SHORT).show()
-                finish() // Close activity only on actual success
+
+                // ============ FIX: Don't finish immediately ============
+                // Wait 2 seconds to allow notification to be sent
+                binding.saveButton.postDelayed({
+                    finish()
+                }, 2000) // 2 seconds delay
+
+                // Show a message that notification is being sent
+                binding.errorText.text = "Sending notification..."
+                binding.errorText.visibility = View.VISIBLE
+                binding.errorText.setTextColor(ContextCompat.getColor(this, R.color.primary))
+
             } else {
                 android.util.Log.e("AddWorkoutActivity", "❌ Failed to save workout")
                 binding.errorText.text = "Failed to save workout. Please try again."
                 binding.errorText.visibility = View.VISIBLE
+                binding.errorText.setTextColor(ContextCompat.getColor(this, R.color.error))
             }
         }
 
@@ -369,6 +382,31 @@ class AddWorkoutActivity : AppCompatActivity() {
             }
         }
     }
+
+    // Add this function
+    private fun checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    android.util.Log.d("AddWorkoutActivity", "✅ Notification permission granted")
+                }
+                else -> {
+                    android.util.Log.d("AddWorkoutActivity", "🔔 Requesting notification permission")
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                        1002
+                    )
+                }
+            }
+        }
+    }
+
+
+
 
     private fun calculateCalories(activityType: String, durationMinutes: Int, weightKg: Double): Int {
         val met = when (activityType) {
@@ -437,10 +475,22 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1001 && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            startTracking()
-        } else {
-            Toast.makeText(this, "Permissions required for tracking", Toast.LENGTH_SHORT).show()
+        when (requestCode) {
+            1001 -> {
+                if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                    startTracking()
+                } else {
+                    Toast.makeText(this, "Permissions required for tracking", Toast.LENGTH_SHORT).show()
+                }
+            }
+            1002 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    android.util.Log.d("AddWorkoutActivity", "✅ Notification permission granted!")
+                    Toast.makeText(this, "Notifications enabled!", Toast.LENGTH_SHORT).show()
+                } else {
+                    android.util.Log.w("AddWorkoutActivity", "⚠️ Notification permission denied")
+                }
+            }
         }
     }
 

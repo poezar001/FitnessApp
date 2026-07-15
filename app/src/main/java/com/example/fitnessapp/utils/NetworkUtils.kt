@@ -248,8 +248,8 @@ object NetworkUtils {
                 "sets" to workout.sets,
                 "reps" to workout.reps,
                 "weight_lifted_kg" to workout.weightLiftedKg,
-                "steps" to workout.steps,         // Added missing field
-                "intensity" to workout.intensity, // Added missing field
+                "steps" to workout.steps,
+                "intensity" to workout.intensity,
                 "notes" to workout.notes,
                 "workout_date" to java.text.SimpleDateFormat(
                     "yyyy-MM-dd",

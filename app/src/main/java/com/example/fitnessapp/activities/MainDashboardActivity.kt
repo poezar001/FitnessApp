@@ -23,6 +23,8 @@ import com.android.volley.toolbox.Volley
 import com.example.fitnessapp.R
 import com.example.fitnessapp.databinding.ActivityMainDashboardBinding
 import com.example.fitnessapp.repository.MainRepository
+import com.example.fitnessapp.services.ReminderService
+import com.example.fitnessapp.utils.GoalNotificationHelper
 
 class MainDashboardActivity : AppCompatActivity() {
 
@@ -37,8 +39,10 @@ class MainDashboardActivity : AppCompatActivity() {
     // Handles live updates when background actions alter counts
     private val notificationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == "REFRESH_NOTIFICATION_COUNT") {
-                loadNotificationCount()
+            when (intent?.action) {
+                "REFRESH_NOTIFICATION_COUNT", "REFRESH_NOTIFICATION_BADGE" -> {
+                    loadNotificationCount()
+                }
             }
         }
     }
@@ -55,13 +59,61 @@ class MainDashboardActivity : AppCompatActivity() {
         binding.toolbarUsername.text = "Welcome, $username"
 
         setupNavigation()
+        createNotificationChannel()
+        registerBadgeReceiver()
+        startReminderService()
+    }
+
+    private fun startReminderService() {
+        // Schedule daily reminders
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ReminderService.scheduleDailyReminder(this)
+        } else {
+            ReminderService.scheduleDailyReminder(this)
+        }
+        android.util.Log.d("MainDashboard", "📅 Reminder service scheduled")
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                "fitness_goal_channel",  // Same ID as in GoalNotificationHelper
+                "Fitness Goals",          // Same name
+                android.app.NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for workout progress and achievements"
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
+                setShowBadge(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            val manager = getSystemService(android.app.NotificationManager::class.java)
+            manager?.createNotificationChannel(channel)
+            android.util.Log.d("MainDashboard", "✅ Notification channel created: Fitness Goals")
+        }
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private fun registerBadgeReceiver() {
+        val filter = IntentFilter().apply {
+            addAction("REFRESH_NOTIFICATION_COUNT")
+            addAction("REFRESH_NOTIFICATION_BADGE")
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(notificationReceiver, filter)
+        }
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onStart() {
         super.onStart()
         // Register receiver securely depending on Android API Level
-        val filter = IntentFilter("REFRESH_NOTIFICATION_COUNT")
+        val filter = IntentFilter().apply {
+            addAction("REFRESH_NOTIFICATION_COUNT")
+            addAction("REFRESH_NOTIFICATION_BADGE")
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -83,6 +135,15 @@ class MainDashboardActivity : AppCompatActivity() {
         // Only load if the menu and badge views have already been inflated
         if (badgeTextView != null) {
             loadNotificationCount()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(notificationReceiver)
+        } catch (e: Exception) {
+            // Already unregistered
         }
     }
 
@@ -131,27 +192,42 @@ class MainDashboardActivity : AppCompatActivity() {
 
     private fun loadNotificationCount() {
         val userId = mainRepository.getUserId()
-        if (userId == -1) return
+        if (userId == -1) {
+            android.util.Log.d("Dashboard", "⚠️ User ID not found")
+            return
+        }
 
         val url = "http://10.0.2.2/fitness_app/get_notification_count.php?user_id=$userId"
+        android.util.Log.d("Dashboard", "📊 Loading count from: $url")
 
         val request = JsonObjectRequest(
             Request.Method.GET, url, null,
             { response ->
                 try {
+                    android.util.Log.d("Dashboard", "📊 Response: $response")
                     if (response.getBoolean("success")) {
+                        // ============ FIX: Check for unread_count first ============
                         notificationCount = if (response.has("unread_count")) {
                             response.getInt("unread_count")
-                        } else {
+                        } else if (response.has("count")) {
                             response.getInt("count")
+                        } else {
+                            0
                         }
+                        android.util.Log.d("Dashboard", "📊 Notification count: $notificationCount")
                         updateNotificationBadge()
+                    } else {
+                        android.util.Log.e("Dashboard", "❌ Failed: ${response.optString("message")}")
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("Dashboard", "JSON Parsing error: ${e.message}")
+                    android.util.Log.e("Dashboard", "❌ JSON Parsing error: ${e.message}")
+                    e.printStackTrace()
                 }
             },
-            { error -> android.util.Log.e("Dashboard", "Network error: ${error.message}") }
+            { error ->
+                android.util.Log.e("Dashboard", "❌ Network error: ${error.message}")
+                error.printStackTrace()
+            }
         )
 
         Volley.newRequestQueue(this).add(request)
@@ -162,11 +238,15 @@ class MainDashboardActivity : AppCompatActivity() {
             if (notificationCount > 0) {
                 badge.text = if (notificationCount > 99) "99+" else notificationCount.toString()
                 badge.visibility = View.VISIBLE
+                android.util.Log.d("Dashboard", "🔔 Badge VISIBLE: ${badge.text}")
             } else {
                 badge.visibility = View.GONE
+                android.util.Log.d("Dashboard", "🔔 Badge GONE (0 notifications)")
             }
         }
     }
+
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {

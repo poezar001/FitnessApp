@@ -15,7 +15,7 @@
         app:title="Notifications"
         app:titleTextColor="@color/text_primary" />
 
-    <!-- Notification Count -->
+    <!-- Notification Count - HIDE THIS WHEN THERE ARE NOTIFICATIONS -->
     <TextView
         android:id="@+id/tvNotificationCount"
         android:layout_width="match_parent"
@@ -23,7 +23,8 @@
         android:padding="16dp"
         android:text="0 notifications"
         android:textSize="14sp"
-        android:textColor="@color/text_secondary" />
+        android:textColor="@color/text_secondary"
+        android:visibility="gone" />  <!-- CHANGED TO gone -->
 
     <TextView
         android:id="@+id/emptyStateText"
@@ -40,6 +41,7 @@
         android:id="@+id/notificationsRecycler"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp" />
+        android:padding="8dp"
+        android:visibility="gone" />  <!-- ADDED visibility gone by default -->
 
 </LinearLayout>
