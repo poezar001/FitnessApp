@@ -86,6 +86,10 @@ class GoalSettingActivity : AppCompatActivity() {
                 isSaving = false
 
                 if (success) {
+                    // Clear out the tracking cache so the dashboard/service forces a new evaluation
+                    val prefs = getSharedPreferences("goal_tracking", MODE_PRIVATE)
+                    prefs.edit().clear().apply()
+
                     Toast.makeText(this@GoalSettingActivity, "Goal set successfully!", Toast.LENGTH_SHORT).show()
                     finish()
                 } else {

@@ -445,7 +445,23 @@ class AddWorkoutActivity : AppCompatActivity() {
                 binding.durationInput.text.toString().toIntOrNull() ?: 0
             }
 
+            if (duration <= 0 && selected?.requiresTracking == false) {
+                binding.errorText.text = "Please enter a valid duration"
+                binding.errorText.visibility = View.VISIBLE
+                return@setOnClickListener
+            }
+
+
+
             val calories = if (selected?.requiresTracking == true) trackedCalories else calculateCalories(activityType, duration, weight)
+// SAFE VALUE EXTRACTIONS MATCHING VISIBLE VIEWS
+            val manualDistance = if (activityType == "Treadmill") {
+                binding.distanceInput.text?.toString()?.toDoubleOrNull()
+            } else null
+
+            val manualSpeed = if (activityType == "Treadmill") {
+                binding.speedInput.text?.toString()?.toDoubleOrNull()
+            } else null
 
             val workout = Workout(
                 id = 0,
@@ -453,19 +469,18 @@ class AddWorkoutActivity : AppCompatActivity() {
                 activityType = activityType,
                 durationMinutes = duration,
                 caloriesBurned = calories,
-                distanceKm = if (selected?.requiresTracking == true) trackedDistance else binding.distanceInput.text?.toString()?.toDoubleOrNull(),
+                distanceKm = if (selected?.requiresTracking == true) trackedDistance else manualDistance,
                 steps = if (selected?.requiresTracking == true) trackedSteps else null,
-                speedKmh = if (selected?.requiresTracking == true) null else binding.speedInput.text?.toString()?.toDoubleOrNull(),
-                exerciseName = binding.exerciseNameInput.text?.toString()?.takeIf { it.isNotEmpty() },
-                sets = binding.setsInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toIntOrNull(),
-                reps = binding.repsInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toIntOrNull(),
-                weightLiftedKg = binding.weightLiftedInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toDoubleOrNull(),
-                intensity = binding.intensityInput.text?.toString()?.takeIf { it.isNotEmpty() },
+                speedKmh = if (selected?.requiresTracking == true) null else manualSpeed,
+                exerciseName = if (activityType == "Weightlifting" || activityType == "Strength") binding.exerciseNameInput.text?.toString()?.takeIf { it.isNotEmpty() } else null,
+                sets = if (activityType == "Weightlifting" || activityType == "Strength") binding.setsInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toIntOrNull() else null,
+                reps = if (activityType == "Weightlifting" || activityType == "Strength") binding.repsInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toIntOrNull() else null,
+                weightLiftedKg = if (activityType == "Weightlifting" || activityType == "Strength") binding.weightLiftedInput.text?.toString()?.takeIf { it.isNotEmpty() }?.toDoubleOrNull() else null,
+                intensity = if (binding.intensityLayout.visibility == View.VISIBLE) binding.intensityInput.text?.toString()?.takeIf { it.isNotEmpty() } else null,
                 notes = binding.notesInput.text?.toString()?.takeIf { it.isNotEmpty() },
                 workoutDate = try { dateFormat.parse(selectedDate) ?: Date() } catch (e: Exception) { Date() },
                 workoutTime = selectedTime,
                 isTracked = selected?.requiresTracking == true,
-                // ADDED THIS FIELD: Converts and saves the map route points as a JSON string
                 routePoints = if (selected?.requiresTracking == true) convertPathPointsToJson(currentRoutePoints) else null
             )
 
