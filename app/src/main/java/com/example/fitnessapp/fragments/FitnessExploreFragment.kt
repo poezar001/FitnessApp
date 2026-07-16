@@ -44,7 +44,6 @@ class FitnessExploreFragment : Fragment() {
     }
 
     private fun setupActivityTypes() {
-        // Each activity card has its own click listener
         binding.activityMeditation.setOnClickListener {
             openYouTubeVideo("https://www.youtube.com/watch?v=inpok4MKVLM")
         }
@@ -93,7 +92,10 @@ class FitnessExploreFragment : Fragment() {
                 episodes = "15 EPISODES",
                 imageResId = R.drawable.act_pilates,
                 videoUrl = "https://www.youtube.com/watch?v=LD2Yeyq27H0",
-                duration = "20 min"
+                duration = "20 min",
+                level = "Intermediate",
+                activityType = "Pilates",
+                approxBurn = 220
             ),
             WorkoutProgram(
                 title = "Treadmill HIIT Workout",
@@ -101,7 +103,11 @@ class FitnessExploreFragment : Fragment() {
                 episodes = "12 EPISODES",
                 imageResId = R.drawable.act_treadmill,
                 videoUrl = "https://www.youtube.com/watch?v=HpGf7z5VxLM",
-                duration = "30 min"
+                duration = "30 min",
+                level = "Beginner",
+                activityType = "Treadmill",
+                approxBurn = 350,
+                approxDistance = 4.0
             ),
             WorkoutProgram(
                 title = "Kickboxing Fury",
@@ -109,7 +115,10 @@ class FitnessExploreFragment : Fragment() {
                 episodes = "20 EPISODES",
                 imageResId = R.drawable.act_kickboxing,
                 videoUrl = "https://www.youtube.com/watch?v=0oG8YeSi8as",
-                duration = "25 min"
+                duration = "25 min",
+                level = "Advanced",
+                activityType = "Kickboxing",
+                approxBurn = 450
             ),
             WorkoutProgram(
                 title = "Strength Training 101",
@@ -117,7 +126,9 @@ class FitnessExploreFragment : Fragment() {
                 episodes = "30 EPISODES",
                 imageResId = R.drawable.act_strength,
                 videoUrl = "https://www.youtube.com/watch?v=ykJp1N6hQow",
-                duration = "35 min"
+                duration = "35 min",
+                level = "Beginner",
+                activityType = "Strength"
             ),
             WorkoutProgram(
                 title = "Weightlifting Basics",
@@ -125,7 +136,9 @@ class FitnessExploreFragment : Fragment() {
                 episodes = "18 EPISODES",
                 imageResId = R.drawable.act_weightlifting,
                 videoUrl = "https://www.youtube.com/watch?v=1f4R08TzT-I",
-                duration = "25 min"
+                duration = "25 min",
+                level = "Beginner",
+                activityType = "Weightlifting"
             )
         )
     }

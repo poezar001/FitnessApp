@@ -6,5 +6,10 @@ data class WorkoutProgram(
     val episodes: String,
     val imageResId: Int,
     val videoUrl: String = "",
-    val duration: String = "10 min"
+    val duration: String = "10 min",
+    val level:String = "Beginner",
+    val activityType: String,
+    val approxBurn: Int = 200,
+    val approxDistance: Double = 0.0,
+    var calculatedTargetText: String = ""
 )

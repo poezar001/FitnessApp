@@ -4,6 +4,7 @@
     android:layout_width="200dp"
     android:layout_height="wrap_content"
     android:layout_marginEnd="12dp"
+    android:layout_marginBottom="8dp"
     app:cardCornerRadius="16dp"
     app:cardBackgroundColor="@color/surface"
     android:clickable="true"
@@ -11,99 +12,123 @@
     android:foreground="?android:attr/selectableItemBackground"
     android:elevation="2dp">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <!-- Full-width Image -->
-        <ImageView
-            android:id="@+id/ivProgramIcon"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="140dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/act_pilates" />
+            android:layout_height="140dp">
 
-        <!-- Dark Overlay -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#66000000" />
+            <!-- Full-width Image -->
+            <ImageView
+                android:id="@+id/ivProgramIcon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/act_pilates" />
 
-        <!-- Content on Image -->
+            <!-- Dark Overlay -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#66000000" />
+
+            <!-- Watch Now Badge -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="8dp"
+                android:background="@color/primary"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="▶ Watch Now"
+                android:textSize="10sp"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                android:alpha="0.9" />
+
+            <!-- Title & Description inside the image frame -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="bottom"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvProgramTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="12 Stretchy Yoga Flows"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:maxLines="2" />
+
+                <TextView
+                    android:id="@+id/tvProgramDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Designed for Relaxation"
+                    android:textSize="12sp"
+                    android:textColor="#CCFFFFFF"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Information section outside the image box frame prevents string crushing -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="140dp"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="bottom"
             android:padding="12dp">
 
-            <TextView
-                android:id="@+id/tvProgramTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="12 Stretchy Yoga Flows"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:maxLines="2" />
-
-            <TextView
-                android:id="@+id/tvProgramDescription"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Designed for Relaxation"
-                android:textSize="12sp"
-                android:textColor="#CCFFFFFF"
-                android:layout_marginTop="2dp" />
-
+            <!-- Metadata Row -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
                 <TextView
                     android:id="@+id/tvProgramDuration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="10 min"
-                    android:textSize="10sp"
-                    android:textColor="#CCFFFFFF" />
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" • "
-                    android:textSize="10sp"
-                    android:textColor="#CCCCCC" />
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
 
                 <TextView
                     android:id="@+id/tvProgramEpisodes"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="12 EPISODES"
-                    android:textSize="10sp"
-                    android:textColor="#CCFFFFFF" />
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
             </LinearLayout>
 
+            <!-- Dynamic Clear Target Action Label Block -->
+            <TextView
+                android:id="@+id/tvProgramTargetInstruction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="🎯 Target: Do this 5 times to hit your goal"
+                android:textColor="@color/primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
         </LinearLayout>
-
-        <!-- Watch Now Badge -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_margin="8dp"
-            android:background="@color/primary"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:text="▶ Watch Now"
-            android:textSize="10sp"
-            android:textColor="#000000"
-            android:textStyle="bold"
-            android:alpha="0.9" />
-
-    </FrameLayout>
+    </LinearLayout>
 </androidx.cardview.widget.CardView>
