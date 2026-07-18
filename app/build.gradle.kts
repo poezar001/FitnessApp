@@ -1,8 +1,11 @@
-plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
-}
+import org.gradle.kotlin.dsl.implementation
+
+        plugins {
+            alias(libs.plugins.android.application)
+            alias(libs.plugins.kotlin.android)
+            alias(libs.plugins.kotlin.compose)
+            alias(libs.plugins.kotlin.kapt)
+        }
 
 android {
     namespace = "com.example.fitnessapp"
@@ -39,6 +42,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    kapt {
+        arguments {
+            arg("room.experimental.suppressMetadataVersionCheck", "true")
+        }
+    }
 }
 
 dependencies {
@@ -56,6 +64,7 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
+    implementation(libs.androidx.core.animation)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -80,4 +89,12 @@ dependencies {
     // Google Play Services for Location
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
+    // Room Database for offline storage
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+
+    // WorkManager for background sync
+    implementation ("androidx.work:work-runtime-ktx:2.8.1")
 }

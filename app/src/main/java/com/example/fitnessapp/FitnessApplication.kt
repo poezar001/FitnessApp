@@ -14,6 +14,7 @@ class FitnessApplication : Application() {
         applySavedTheme()
 
         NetworkUtils.init(this)
+
     }
 
     private fun applySavedTheme() {
@@ -25,4 +26,6 @@ class FitnessApplication : Application() {
             else AppCompatDelegate.MODE_NIGHT_NO
         )
     }
+
+
 }

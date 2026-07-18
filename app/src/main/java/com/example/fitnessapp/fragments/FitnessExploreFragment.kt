@@ -45,7 +45,7 @@ class FitnessExploreFragment : Fragment() {
 
     private fun setupActivityTypes() {
         binding.activityMeditation.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=inpok4MKVLM")
+            openYouTubeVideo("https://youtu.be/3rTdYCWrm8c?si=_IJwxCmGZ5fVMJri")
         }
         binding.activityStrength.setOnClickListener {
             openYouTubeVideo("https://www.youtube.com/watch?v=ykJp1N6hQow")

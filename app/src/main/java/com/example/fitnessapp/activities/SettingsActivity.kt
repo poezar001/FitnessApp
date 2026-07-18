@@ -1,13 +1,18 @@
 package com.example.fitnessapp.activities
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.app.TimePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import com.example.fitnessapp.R
+import com.example.fitnessapp.NotificationReceiver
 import com.example.fitnessapp.databinding.ActivitySettingsBinding
 import com.example.fitnessapp.repository.MainRepository
+import java.util.Calendar
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -79,33 +84,89 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setupNotificationToggle() {
         val sharedPref = getSharedPreferences("app_settings", MODE_PRIVATE)
-        val isNotificationsEnabled = sharedPref.getBoolean("workout_notifications", true)
+        val isNotificationsEnabled = sharedPref.getBoolean("workout_reminders_enabled", false)
 
         binding.notificationSwitch.isChecked = isNotificationsEnabled
 
-        binding.notificationSwitch.setOnCheckedChangeListener { _, isChecked ->
-            sharedPref.edit().putBoolean("workout_notifications", isChecked).apply()
-
-            Toast.makeText(
-                this,
-                if (isChecked) "Workout reminders enabled" else "Workout reminders disabled",
-                Toast.LENGTH_SHORT
-            ).show()
-
+        binding.notificationSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
             if (isChecked) {
-                scheduleWorkoutReminders()
+                val calendar = Calendar.getInstance()
+                val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+                val currentMinute = calendar.get(Calendar.MINUTE)
+
+                TimePickerDialog(
+                    this,
+                    { _, selectedHour, selectedMinute ->
+                        // Save states to SharedPreferences
+                        sharedPref.edit().apply {
+                            putBoolean("workout_reminders_enabled", true)
+                            putInt("reminder_hour", selectedHour)
+                            putInt("reminder_minute", selectedMinute)
+                            apply()
+                        }
+
+                        // Schedule the real broadcast intent
+                        scheduleOfflineReminder(selectedHour, selectedMinute)
+
+                        val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                        Toast.makeText(
+                            this,
+                            "Daily reminder set offline for $formattedTime",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    },
+                    currentHour,
+                    currentMinute,
+                    false
+                ).apply {
+                    setOnCancelListener {
+                        buttonView.isChecked = false
+                    }
+                    show()
+                }
             } else {
-                cancelWorkoutReminders()
+                sharedPref.edit().apply {
+                    putBoolean("workout_reminders_enabled", false)
+                    remove("reminder_hour")
+                    remove("reminder_minute")
+                    apply()
+                }
+                cancelOfflineReminder()
+                Toast.makeText(this, "Workout reminders disabled", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun scheduleWorkoutReminders() {
-        Toast.makeText(this, "Workout reminders scheduled!", Toast.LENGTH_SHORT).show()
+    private fun scheduleOfflineReminder(hour: Int, minute: Int) {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, NotificationReceiver::class.java)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Test trigger: exactly 10 seconds from right now
+        val triggerTime = System.currentTimeMillis() + 10000
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerTime,
+            pendingIntent
+        )
     }
 
-    private fun cancelWorkoutReminders() {
-        Toast.makeText(this, "Workout reminders canceled!", Toast.LENGTH_SHORT).show()
+    private fun cancelOfflineReminder() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, NotificationReceiver::class.java)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
     }
 
     private fun setupClickListeners() {

@@ -55,6 +55,9 @@ class AddWorkoutActivity : AppCompatActivity() {
     private var currentRoutePoints = ArrayList<LatLng>()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    // ============ NEW: Track when tracking started ============
+    private var trackingStartTime: Date? = null
+
     private val activityViewModel: ActivityViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
@@ -76,13 +79,11 @@ class AddWorkoutActivity : AppCompatActivity() {
 
                 android.util.Log.d("AddWorkoutActivity", "Raw data - Distance: $distance, Calories: $calories, Duration: $duration, Steps: $steps")
 
-                // Update values
                 trackedDistance = distance
                 trackedCalories = calories
                 trackedDuration = duration
                 trackedSteps = steps
 
-                // FIX: Safe Parcelable Array List extraction
                 val points = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableArrayListExtra("pathPoints", LatLng::class.java)
                 } else {
@@ -95,13 +96,13 @@ class AddWorkoutActivity : AppCompatActivity() {
                     drawRoutePath(it)
                 }
 
-                // Update UI on main thread
                 mainHandler.post {
                     updateTrackingMetricsUI()
                 }
             }
         }
     }
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,6 +134,18 @@ class AddWorkoutActivity : AppCompatActivity() {
         setupSaveButton()
         registerTrackingReceiver()
         checkNotificationPermission()
+
+        // ============ NEW: Auto-fill today's date ============
+        autoFillTodayDate()
+    }
+
+    // ============ NEW: Auto-fill today's date ============
+    private fun autoFillTodayDate() {
+        val calendar = Calendar.getInstance()
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        selectedDate = dateFormat.format(calendar.time)
+        binding.dateInput.setText(selectedDate)
+        android.util.Log.d("AddWorkoutActivity", "📅 Auto-filled date: $selectedDate")
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -201,6 +214,11 @@ class AddWorkoutActivity : AppCompatActivity() {
         binding.intensityLayout.visibility = View.GONE
         binding.trackingLayout.visibility = View.GONE
         binding.durationLayout.visibility = View.VISIBLE
+
+        // ============ NEW: Show/hide date/time based on activity type ============
+        // By default, date/time are visible for manual activities
+        binding.dateInput.isEnabled = true
+        binding.timeInput.isEnabled = true
     }
 
     private fun updateDynamicFields(activityType: String) {
@@ -208,13 +226,39 @@ class AddWorkoutActivity : AppCompatActivity() {
         val selected = ActivityType.entries.find { it.displayName == activityType }
         selected?.let {
             if (it.requiresTracking) {
+                // ============ TRACKING ACTIVITY ============
                 binding.trackingLayout.visibility = View.VISIBLE
                 binding.durationLayout.visibility = View.GONE
                 binding.mapView.visibility = View.VISIBLE
+
+                // ============ AUTO-FILL DATE & TIME FOR TRACKING ============
+                autoFillTodayDate()
+                autoFillCurrentTime()
+
+                // Disable manual date/time editing for tracking activities
+                binding.dateInput.isEnabled = false
+                binding.timeInput.isEnabled = false
+
+                // Show hint that date/time are auto-filled
+                binding.dateInput.hint = "Auto (Today)"
+                binding.timeInput.hint = "Auto (Now)"
+
+                android.util.Log.d("AddWorkoutActivity", "📅 Tracking mode: Date/Time auto-filled")
+
             } else {
+                // ============ MANUAL ACTIVITY ============
                 binding.durationLayout.visibility = View.VISIBLE
                 binding.trackingLayout.visibility = View.GONE
                 binding.mapView.visibility = View.GONE
+
+                // Enable manual date/time editing
+                binding.dateInput.isEnabled = true
+                binding.timeInput.isEnabled = true
+                binding.dateInput.hint = "Select Date"
+                binding.timeInput.hint = "Select Time"
+
+                // Keep today's date as default
+                autoFillTodayDate()
 
                 when (activityType) {
                     "Weightlifting", "Strength" -> {
@@ -234,6 +278,15 @@ class AddWorkoutActivity : AppCompatActivity() {
         }
     }
 
+    // ============ NEW: Auto-fill current time ============
+    private fun autoFillCurrentTime() {
+        val calendar = Calendar.getInstance()
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        selectedTime = timeFormat.format(calendar.time)
+        binding.timeInput.setText(selectedTime)
+        android.util.Log.d("AddWorkoutActivity", "⏰ Auto-filled time: $selectedTime")
+    }
+
     private fun setupIntensitySpinner() {
         val intensities = arrayOf("Beginner", "Intermediate", "Advanced")
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, intensities)
@@ -242,14 +295,19 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     private fun setupTrackingUI() {
         binding.btnStartTracking.setOnClickListener {
-            if (isTracking) stopTracking() else startTracking()
+            if (isTracking) {
+                stopTracking()
+            } else {
+                // ============ FIX: Set start time when tracking starts ============
+                trackingStartTime = Date()
+                startTracking()
+            }
         }
     }
 
     private fun updateTrackingMetricsUI() {
         android.util.Log.d("AddWorkoutActivity", "Updating UI - Distance: $trackedDistance, Steps: $trackedSteps")
 
-        // Find TextViews by ID and update directly
         val tvDistance = findViewById<TextView>(R.id.tvTrackedDistance)
         val tvCalories = findViewById<TextView>(R.id.tvTrackedCalories)
         val tvDuration = findViewById<TextView>(R.id.tvTrackedDuration)
@@ -299,6 +357,7 @@ class AddWorkoutActivity : AppCompatActivity() {
         }
 
         isTracking = true
+        trackingStartTime = Date() // Record start time
         binding.btnStartTracking.text = "Stop Tracking"
         binding.btnStartTracking.setBackgroundColor(ContextCompat.getColor(this, R.color.error))
 
@@ -309,7 +368,13 @@ class AddWorkoutActivity : AppCompatActivity() {
         trackedSteps = 0
         updateTrackingMetricsUI()
 
-        android.util.Log.d("AddWorkoutActivity", "Tracking started for: $activityType")
+        // ============ AUTO-FILL DATE & TIME WHEN TRACKING STARTS ============
+        autoFillTodayDate()
+        autoFillCurrentTime()
+        binding.dateInput.isEnabled = false
+        binding.timeInput.isEnabled = false
+
+        android.util.Log.d("AddWorkoutActivity", "Tracking started for: $activityType at $selectedTime")
         Toast.makeText(this, "Tracking started for $activityType!", Toast.LENGTH_SHORT).show()
     }
 
@@ -327,6 +392,12 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     private fun setupDatePicker() {
         binding.dateInput.setOnClickListener {
+            // Only allow manual date selection if date input is enabled
+            if (!binding.dateInput.isEnabled) {
+                Toast.makeText(this, "Date is auto-filled for tracking activities", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val calendar = Calendar.getInstance()
             DatePickerDialog(this, { _, year, month, day ->
                 selectedDate = String.format(Locale.getDefault(), "%d-%02d-%02d", year, month + 1, day)
@@ -337,6 +408,12 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     private fun setupTimePicker() {
         binding.timeInput.setOnClickListener {
+            // Only allow manual time selection if time input is enabled
+            if (!binding.timeInput.isEnabled) {
+                Toast.makeText(this, "Time is auto-filled for tracking activities", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val calendar = Calendar.getInstance()
             TimePickerDialog(this, { _, hour, minute ->
                 selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
@@ -347,24 +424,39 @@ class AddWorkoutActivity : AppCompatActivity() {
 
     private fun setupObservers() {
         activityViewModel.saveResult.observe(this) { success ->
-            // Stop progress spinners
             binding.progressBar.visibility = View.GONE
             binding.saveButton.isEnabled = true
 
             if (success) {
-                android.util.Log.d("AddWorkoutActivity", "✅ Workout saved successfully!")
-                Toast.makeText(this, "Workout saved successfully!", Toast.LENGTH_SHORT).show()
+                // Check network status to display the correct message
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+                val capabilities = cm.getNetworkCapabilities(cm.activeNetwork)
+                val isOnline = capabilities != null && (
+                        capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                                capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)
+                        )
 
-                // ============ FIX: Don't finish immediately ============
-                // Wait 2 seconds to allow notification to be sent
-                binding.saveButton.postDelayed({
+                if (isOnline) {
+                    // Online Save Flow
+                    android.util.Log.d("AddWorkoutActivity", "✅ Workout saved successfully online!")
+                    Toast.makeText(this, "Workout saved successfully!", Toast.LENGTH_SHORT).show()
+
+                    binding.errorText.text = "Sending notification..."
+                    binding.errorText.visibility = View.VISIBLE
+                    binding.errorText.setTextColor(ContextCompat.getColor(this, R.color.primary))
+
+                    // Wait 2 seconds then finish
+                    binding.saveButton.postDelayed({
+                        finish()
+                    }, 2000)
+                } else {
+                    // Offline Save Flow (Airplane Mode)
+                    android.util.Log.d("AddWorkoutActivity", "📦 Workout saved to Offline Queue!")
+                    Toast.makeText(this, "Workout saved successfully (Offline Queue)", Toast.LENGTH_SHORT).show()
+
+                    // Close the screen immediately when offline so the user can look at their updated history tab
                     finish()
-                }, 2000) // 2 seconds delay
-
-                // Show a message that notification is being sent
-                binding.errorText.text = "Sending notification..."
-                binding.errorText.visibility = View.VISIBLE
-                binding.errorText.setTextColor(ContextCompat.getColor(this, R.color.primary))
+                }
 
             } else {
                 android.util.Log.e("AddWorkoutActivity", "❌ Failed to save workout")
@@ -383,7 +475,6 @@ class AddWorkoutActivity : AppCompatActivity() {
         }
     }
 
-    // Add this function
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             when {
@@ -404,9 +495,6 @@ class AddWorkoutActivity : AppCompatActivity() {
             }
         }
     }
-
-
-
 
     private fun calculateCalories(activityType: String, durationMinutes: Int, weightKg: Double): Int {
         val met = when (activityType) {
@@ -438,7 +526,6 @@ class AddWorkoutActivity : AppCompatActivity() {
             val userProfile = mainRepository.getUserProfile()
             val weight = userProfile?.weight?.toDouble() ?: 70.0
 
-            // Fix: Ensure duration is at least 1 minute if tracking just started to avoid validation failures
             val duration = if (selected?.requiresTracking == true) {
                 if (trackedDuration > 0) trackedDuration else 1
             } else {
@@ -451,10 +538,8 @@ class AddWorkoutActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-
-
             val calories = if (selected?.requiresTracking == true) trackedCalories else calculateCalories(activityType, duration, weight)
-// SAFE VALUE EXTRACTIONS MATCHING VISIBLE VIEWS
+
             val manualDistance = if (activityType == "Treadmill") {
                 binding.distanceInput.text?.toString()?.toDoubleOrNull()
             } else null
