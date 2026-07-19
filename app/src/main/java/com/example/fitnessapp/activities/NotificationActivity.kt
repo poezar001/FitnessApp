@@ -62,13 +62,67 @@ class NotificationActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        notificationAdapter = NotificationAdapter { notification ->
-            if (!notification.isRead) {
-                markNotificationAsRead(notification.id)
+        notificationAdapter = NotificationAdapter(
+            onItemClick = { notification ->
+                if (!notification.isRead) {
+                    markNotificationAsRead(notification.id)
+                }
+            },
+            onDeleteClick = { notification, position ->
+                // Invoke Volley deletion request mapped directly to your PHP endpoint
+                deleteNotificationFromServer(notification.id, position)
             }
-        }
+        )
         binding.notificationsRecycler.layoutManager = LinearLayoutManager(this)
         binding.notificationsRecycler.adapter = notificationAdapter
+    }
+
+
+    private fun deleteNotificationFromServer(notificationId: Int, position: Int) {
+        val url = "http://10.0.2.2/fitness_app/delete_notification.php"
+        val jsonBody = JSONObject().apply {
+            put("notification_id", notificationId)
+        }
+
+        val request = object : JsonObjectRequest(
+            Request.Method.POST, url, jsonBody,
+            { response ->
+                try {
+                    val success = response.getBoolean("success")
+                    if (success) {
+                        // 1. Instantly pull the item from local lists to keep views snappy
+                        if (position in notifications.indices) {
+                            notifications.removeAt(position)
+                        }
+                        notificationAdapter.removeItem(position)
+
+                        // 2. Clear or update layout text headers if the list becomes empty
+                        if (notifications.isEmpty()) {
+                            showEmptyState()
+                        }
+
+                        // 3. Keep application badge counters instantly synced
+                        sendBroadcast(Intent("REFRESH_NOTIFICATION_BADGE"))
+
+                        Toast.makeText(this, "Notification deleted", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val message = response.optString("message", "Unknown error")
+                        Toast.makeText(this, "Failed: $message", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "Error updating interface", Toast.LENGTH_SHORT).show()
+                }
+            },
+            { error ->
+                android.util.Log.e("NotificationActivity", "❌ Failed to delete: ${error.message}")
+                Toast.makeText(this, "Network connection error", Toast.LENGTH_SHORT).show()
+            }
+        ) {
+            override fun getBodyContentType(): String = "application/json"
+        }
+
+        Volley.newRequestQueue(this).add(request)
     }
 
     private fun loadNotificationsFromServer() {

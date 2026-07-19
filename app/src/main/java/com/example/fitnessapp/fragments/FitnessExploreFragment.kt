@@ -39,7 +39,7 @@ class FitnessExploreFragment : Fragment() {
 
     private fun setupSamplerClick() {
         binding.cardSampler.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=wTXVv1cYh0w") // Morning Yoga Flow
+            openYouTubeVideo("https://youtu.be/EvMTrP8eRvM?si=7855PSGqdjvZRWDO") // Morning Yoga Flow
         }
     }
 
@@ -48,31 +48,31 @@ class FitnessExploreFragment : Fragment() {
             openYouTubeVideo("https://youtu.be/3rTdYCWrm8c?si=_IJwxCmGZ5fVMJri")
         }
         binding.activityStrength.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=ykJp1N6hQow")
+            openYouTubeVideo("https://youtu.be/V09O2rwArjI?si=lC9ylSwSI5yHQYBR")
         }
         binding.activityYoga.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=wTXVv1cYh0w")
+            openYouTubeVideo("https://youtu.be/EvMTrP8eRvM?si=7855PSGqdjvZRWDO")
         }
         binding.activityRunning.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=HoUzR8q-Qyo")
+            openYouTubeVideo("https://youtu.be/twuSS9Uu2p0?si=Af3zAO_6dmglbEPf")
         }
         binding.activityCycling.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=OBYV7sHR2xU")
+            openYouTubeVideo("https://youtu.be/D3bQxOx8DAk?si=Rvtew_Jvp6Aho8IR")
         }
         binding.activityWeightlifting.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=1f4R08TzT-I")
+            openYouTubeVideo("https://youtu.be/1VvgNZsg9nc?si=kzv9PzYrSK7UensO")
         }
         binding.activityWalking.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=1TgJvMTbsMs")
+            openYouTubeVideo("https://youtu.be/KaIeBaxzIqs?si=BqlOkSM1rYS4EqUj")
         }
         binding.activityPilates.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=LD2Yeyq27H0")
+            openYouTubeVideo("https://youtu.be/-0S6qnm2EqU?si=-9sxzysUuOLMUBq3")
         }
         binding.activityKickboxing.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=0oG8YeSi8as")
+            openYouTubeVideo("https://youtu.be/Hri2rYgOLKI?si=IgHwsh7rGNxMn03g")
         }
         binding.activityTreadmill.setOnClickListener {
-            openYouTubeVideo("https://www.youtube.com/watch?v=HpGf7z5VxLM")
+            openYouTubeVideo("https://youtu.be/8gWkLOFGzSo?si=OPCvSSrgwyR4BylF")
         }
     }
 

@@ -360,10 +360,20 @@ class MainRepository(private val context: Context) {
         )
     }
 
+
     fun logout() {
-        sharedPreferences.edit().clear().apply()
+        // Remove only the authentication session keys so the profile details survive!
+        sharedPreferences.edit().apply {
+            remove("user_id")
+            remove("username")
+            remove("email")
+            apply()
+        }
+
+        // Clear the offline workout queue and analytics cache safely
         cachePreferences.edit().clear().apply()
     }
+
 
     // ==================== GOAL RELATED METHODS ====================
 

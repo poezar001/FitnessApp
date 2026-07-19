@@ -146,12 +146,22 @@ class SettingsActivity : AppCompatActivity() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Test trigger: exactly 10 seconds from right now
-        val triggerTime = System.currentTimeMillis() + 10000
+        // Set the calendar to the exact time selected by the user
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
 
+            // If the selected time has already passed today, schedule it for tomorrow
+            if (before(Calendar.getInstance())) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        // Set the real recurring scheduled alarm time instead of the 10-second test
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            triggerTime,
+            calendar.timeInMillis,
             pendingIntent
         )
     }

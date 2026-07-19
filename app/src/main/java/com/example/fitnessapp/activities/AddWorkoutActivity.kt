@@ -308,15 +308,11 @@ class AddWorkoutActivity : AppCompatActivity() {
     private fun updateTrackingMetricsUI() {
         android.util.Log.d("AddWorkoutActivity", "Updating UI - Distance: $trackedDistance, Steps: $trackedSteps")
 
-        val tvDistance = findViewById<TextView>(R.id.tvTrackedDistance)
-        val tvCalories = findViewById<TextView>(R.id.tvTrackedCalories)
-        val tvDuration = findViewById<TextView>(R.id.tvTrackedDuration)
-        val tvSteps = findViewById<TextView>(R.id.tvTrackedSteps)
-
-        tvDistance?.text = String.format(Locale.getDefault(), "%.3f km", trackedDistance)
-        tvCalories?.text = "${trackedCalories} kcal"
-        tvDuration?.text = "${trackedDuration} min"
-        tvSteps?.text = "$trackedSteps steps"
+        // FIXED: Use binding directly to guarantee UI delivery without findViewById null hazards
+        binding.tvTrackedDistance.text = String.format(Locale.getDefault(), "%.3f km", trackedDistance)
+        binding.tvTrackedCalories.text = "${trackedCalories} kcal"
+        binding.tvTrackedDuration.text = "${trackedDuration} min"
+        binding.tvTrackedSteps.text = "$trackedSteps steps"
     }
 
     private fun startTracking() {

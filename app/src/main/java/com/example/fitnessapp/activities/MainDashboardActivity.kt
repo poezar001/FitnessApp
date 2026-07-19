@@ -11,6 +11,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -25,6 +26,9 @@ import com.example.fitnessapp.databinding.ActivityMainDashboardBinding
 import com.example.fitnessapp.repository.MainRepository
 import com.example.fitnessapp.services.ReminderService
 import com.example.fitnessapp.utils.GoalNotificationHelper
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlin.coroutines.resume
 
 class MainDashboardActivity : AppCompatActivity() {
 
@@ -136,6 +140,7 @@ class MainDashboardActivity : AppCompatActivity() {
         if (badgeTextView != null) {
             loadNotificationCount()
         }
+        syncOfflineWorkouts()
     }
 
     override fun onDestroy() {
@@ -265,5 +270,68 @@ class MainDashboardActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun syncOfflineWorkouts() {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val capabilities = cm.getNetworkCapabilities(cm.activeNetwork)
+        val isOnline = capabilities != null && (
+                capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                        capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)
+                )
+
+        if (isOnline) {
+            // Use LifecycleScope to safely execute suspend repository methods from the Activity
+            lifecycleScope.launch {
+                val cachePreferences = getSharedPreferences("fitness_app_offline_cache", Context.MODE_PRIVATE)
+                val rawQueue = cachePreferences.getString("offline_workout_queue", "[]") ?: "[]"
+
+                val queueArray = org.json.JSONArray(rawQueue)
+                if (queueArray.length() == 0) return@launch // Nothing to sync
+
+                android.util.Log.d("MainActivity", "Syncing ${queueArray.length()} offline workouts to remote server...")
+
+                var allSyncedSuccessfully = true
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+
+                // Loop through each unsynced workout record
+                for (i in 0 until queueArray.length()) {
+                    val obj = queueArray.getJSONObject(i)
+                    val dateStr = obj.getString("workoutDate")
+
+                    val workout = com.example.fitnessapp.models.Workout(
+                        id = 0, // Server will auto-increment a new MySQL ID
+                        userId = mainRepository.getUserId(), // FIXED: Using mainRepository instead of repository
+                        activityType = obj.getString("activityType"),
+                        durationMinutes = obj.getInt("durationMinutes"),
+                        caloriesBurned = obj.getInt("caloriesBurned"),
+                        distanceKm = if (obj.isNull("distanceKm")) null else obj.getDouble("distanceKm"),
+                        workoutDate = sdf.parse(dateStr)
+                    )
+
+                    // FIXED: Correct signature structure for suspendCancellableCoroutine to prevent onCancellation compilation errors
+                    val success = kotlinx.coroutines.suspendCancellableCoroutine<Boolean> { continuation ->
+                        com.example.fitnessapp.utils.NetworkUtils.saveWorkout(applicationContext, workout) { networkSuccess, _ ->
+                            if (continuation.isActive) {
+                                continuation.resume(networkSuccess)
+                            }
+                        }
+                    }
+
+                    if (!success) {
+                        allSyncedSuccessfully = false
+                    }
+                }
+
+                if (allSyncedSuccessfully) {
+                    android.util.Log.d("MainActivity", "✅ All offline workouts successfully synced to MySQL!")
+                    // Clear the offline queue cache completely
+                    cachePreferences.edit().putString("offline_workout_queue", "[]").apply()
+
+                    // Refresh your dashboard UI or ViewModels so the new items appear immediately
+                    Toast.makeText(this@MainDashboardActivity, "Offline data synced successfully!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

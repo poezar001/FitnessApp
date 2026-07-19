@@ -25,6 +25,9 @@ class PersonalizeActivity : AppCompatActivity() {
     private var currentWeight: Int = 70
     private var selectedActivityLevel: ActivityLevel = ActivityLevel.BEGINNER
 
+    // Track if the activity was opened in edit mode
+    private var isEditMode: Boolean = false
+
     private val profileViewModel: ProfileViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
@@ -39,16 +42,52 @@ class PersonalizeActivity : AppCompatActivity() {
         binding = ActivityPersonalizeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Read intentional direction parameter from settings configuration intent
+        isEditMode = intent.getBooleanExtra("edit_mode", false)
+        authRepository = AuthRepository(this)
+
         setupGenderSelection()
         setupValueAdjusters()
         setupActivityLevelSelection()
         setupObservers()
         setupClickListeners()
 
-        // Initialize UI with default values
+        // If editing, load the data that is already stored on the device
+        if (isEditMode) {
+            loadExistingProfileData()
+        }
+
+        // Initialize UI with matching structural values
         updateGenderUI()
         updateActivityLevelUI()
         updateValueDisplay()
+    }
+
+    private fun loadExistingProfileData() {
+        val sharedPref = getSharedPreferences("fitness_app_prefs", MODE_PRIVATE)
+
+        selectedGender = sharedPref.getString("gender", "Male") ?: "Male"
+        currentHeight = sharedPref.getFloat("height", 170f).toInt()
+        currentWeight = sharedPref.getFloat("weight", 70f).toInt()
+
+        val activityLevelStr = sharedPref.getString("activity_level", ActivityLevel.BEGINNER.name)
+        selectedActivityLevel = try {
+            ActivityLevel.valueOf(activityLevelStr ?: ActivityLevel.BEGINNER.name)
+        } catch (e: Exception) {
+            ActivityLevel.BEGINNER
+        }
+
+        // Programmatically reverse-calculate approximate age from the cached birthday layout string
+        val birthdayStr = sharedPref.getString("birthday", "") ?: ""
+        if (birthdayStr.isNotEmpty()) {
+            try {
+                val birthYear = birthdayStr.split("-")[0].toInt()
+                val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                currentAge = currentYear - birthYear
+            } catch (e: Exception) {
+                currentAge = 25
+            }
+        }
     }
 
     private fun setupGenderSelection() {
@@ -150,9 +189,15 @@ class PersonalizeActivity : AppCompatActivity() {
         profileViewModel.saveResult.observe(this) { success ->
             if (success) {
                 Toast.makeText(this, "Profile saved successfully!", Toast.LENGTH_SHORT).show()
-                // Navigate to MainDashboardActivity
-                startActivity(Intent(this, MainDashboardActivity::class.java))
-                finish()
+
+                if (isEditMode) {
+                    Toast.makeText(this, "Update profile successfully", Toast.LENGTH_SHORT).show()
+                    finish()
+                } else {
+                    // Navigate to MainDashboardActivity for a brand new user setup sequence
+                    startActivity(Intent(this, MainDashboardActivity::class.java))
+                    finish()
+                }
             } else {
                 binding.errorText.text = "Failed to save profile."
                 binding.errorText.visibility = View.VISIBLE

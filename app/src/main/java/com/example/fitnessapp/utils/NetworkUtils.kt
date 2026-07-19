@@ -564,6 +564,27 @@ object NetworkUtils {
         requestQueue.add(request)
     }
 
+    fun deleteNotification(context: Context, notificationId: Int, callback: (Boolean) -> Unit) {
+        val url = "http://10.0.2.2/fitness_app/delete_notification.php"
+
+        // Create the JSON payload your PHP script expects
+        val jsonBody = org.json.JSONObject().apply {
+            put("notification_id", notificationId)
+        }
+
+        val request = com.android.volley.toolbox.JsonObjectRequest(
+            com.android.volley.Request.Method.POST, url, jsonBody,
+            { response ->
+                val success = response.optBoolean("success", false)
+                callback(success)
+            },
+            { error ->
+                android.util.Log.e("NetworkUtils", "Error deleting notification: ${error.message}")
+                callback(false)
+            }
+        )
+        com.android.volley.toolbox.Volley.newRequestQueue(context).add(request)
+    }
 }
 
 data class ApiGoal(
